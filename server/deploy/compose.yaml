@@ -1,0 +1,42 @@
+# Implantação do backend com filesystem raiz somente leitura.
+#
+# A única montagem gravável é a tmpfs de spool, e ela é RAM: nada do que passa
+# por aqui alcança disco. `noexec` e `nosuid` fecham o caminho de alguém tentar
+# executar o que subiu.
+services:
+  toolbox-server:
+    build: ..
+    image: toolbox-server
+    read_only: true
+    tmpfs:
+      - /spool:rw,noexec,nosuid,nodev,size=3g,mode=1700
+    environment:
+      ADDR: ":8080"
+      SPOOL_DIR: "/spool"
+      # Camada C: acima disso a requisição é recusada com 413.
+      REQUEST_MAX_BYTES: "536870912"
+      # Camada A: até aqui o conteúdo nem toca a tmpfs.
+      MEM_BUFFER_MAX: "67108864"
+      REQUEST_TIMEOUT: "120s"
+      MAX_CONCURRENCY: "4"
+      SEMAPHORE_WAIT: "5s"
+      RATE_PER_MINUTE: "30"
+      RATE_BURST: "10"
+      # O frontend local usa outra origem durante o desenvolvimento.
+      ALLOWED_ORIGINS: "${ALLOWED_ORIGINS:-http://localhost:3000}"
+    ports:
+      - "8080:8080"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    # O orçamento de memória precisa caber o pior caso: MAX_CONCURRENCY
+    # operações simultâneas, cada uma com até MEM_BUFFER_MAX em memória, mais
+    # o tamanho da tmpfs.
+    mem_limit: 4g
+    healthcheck:
+      test: ["CMD", "/toolbox-server", "-health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
