@@ -1,0 +1,51 @@
+{
+  "name": "web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "tokens": "node scripts/generate-tokens.mts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "fonts:sync": "node scripts/sync-fonts.mjs"
+  },
+  "dependencies": {
+    "@bokuweb/zstd-wasm": "^0.0.27",
+    "@radix-ui/react-slot": "^1.3.3",
+    "bz2": "^1.0.1",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "fast-xml-parser": "^5.11.1",
+    "fflate": "^0.8.3",
+    "lucide-react": "^1.40.0",
+    "next": "16.3.4",
+    "papaparse": "^5.7.0",
+    "punycode": "^2.3.1",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "tailwind-merge": "^3.6.0",
+    "xz-decompress": "^0.2.3",
+    "yaml": "^2.9.0"
+  },
+  "devDependencies": {
+    "@fontsource-variable/inter": "^5.3.0",
+    "@fontsource-variable/jetbrains-mono": "^5.3.0",
+    "@fontsource-variable/newsreader": "^5.3.0",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^26.4.1",
+    "@types/papaparse": "^5.5.2",
+    "@types/punycode": "^2.1.4",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.3.4",
+    "tailwindcss": "^4",
+    "tw-animate-css": "^1.4.0",
+    "typescript": "^5",
+    "vitest": "^5.0.0"
+  }
+}

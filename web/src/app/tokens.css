@@ -1,0 +1,120 @@
+/*
+ * GERADO por scripts/generate-tokens.mts a partir de src/design/tokens.ts.
+ * Não edite à mão — rode `npm run tokens`.
+ */
+
+:root {
+  color-scheme: light;
+
+  /* Cor — tokens semânticos, tema claro */
+  --surface: #f5f5f7;
+  --surface-raised: #fbfbfd;
+  --text: #1d1d1f;
+  --text-muted: #515154;
+  --border: #d2d2d7;
+  --border-interactive: #86868b;
+  --accent: #0071e3;
+  --accent-solid: #0066cc;
+  --accent-solid-hover: #004f9e;
+  --accent-foreground: #fbfbfd;
+  --accent-text: #004f9e;
+  --focus-ring: #0071e3;
+  --danger: #c41e3a;
+  --danger-foreground: #fbfbfd;
+
+  /* Compatibilidade com as variáveis do shadcn/ui */
+  --background: var(--surface);
+  --foreground: var(--text);
+  --card: var(--surface-raised);
+  --card-foreground: var(--text);
+  --popover: var(--surface-raised);
+  --popover-foreground: var(--text);
+  --primary: var(--accent-solid);
+  --primary-foreground: var(--accent-foreground);
+  --secondary: var(--surface-raised);
+  --secondary-foreground: var(--text);
+  --muted: var(--surface-raised);
+  --muted-foreground: var(--text-muted);
+  --destructive: var(--danger);
+  --destructive-foreground: var(--danger-foreground);
+  --input: var(--border-interactive);
+  --ring: var(--focus-ring);
+
+  /* Tipografia */
+  --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif;
+  --font-serif: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  --text-xs: 0.75rem;
+  --text-sm: 0.8125rem;
+  --text-base: 0.9375rem;
+  --text-md: 1rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.75rem;
+  --text-2xl: 2.25rem;
+  --leading-tight: 1.2;
+  --leading-snug: 1.35;
+  --leading-normal: 1.6;
+  --leading-relaxed: 1.75;
+
+  /* Espaçamento e raio */
+  --space-3xs: 0.25rem;
+  --space-2xs: 0.5rem;
+  --space-xs: 0.75rem;
+  --space-sm: 1rem;
+  --space-md: 1.5rem;
+  --space-lg: 2rem;
+  --space-xl: 3rem;
+  --space-2xl: 4rem;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 0.875rem;
+
+  /* Layout */
+  --content-max-width: 1100px;
+  --header-height: 3.25rem;
+}
+
+/*
+ * Tema escuro. A escolha explícita do usuário vence sempre; sem escolha, a
+ * preferência do sistema decide. O par de regras cobre também o instante
+ * anterior à hidratação, quando ainda não há data-theme no documento.
+ */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --surface: #161617;
+  --surface-raised: #1d1d1f;
+  --text: #f5f5f7;
+  --text-muted: #a1a1a6;
+  --border: #2d2d2f;
+  --border-interactive: #6e6e73;
+  --accent: #2997ff;
+  --accent-solid: #0a84ff;
+  --accent-solid-hover: #2997ff;
+  --accent-foreground: #161617;
+  --accent-text: #2997ff;
+  --focus-ring: #2997ff;
+  --danger: #ff6961;
+  --danger-foreground: #161617;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --surface: #161617;
+    --surface-raised: #1d1d1f;
+    --text: #f5f5f7;
+    --text-muted: #a1a1a6;
+    --border: #2d2d2f;
+    --border-interactive: #6e6e73;
+    --accent: #2997ff;
+    --accent-solid: #0a84ff;
+    --accent-solid-hover: #2997ff;
+    --accent-foreground: #161617;
+    --accent-text: #2997ff;
+    --focus-ring: #2997ff;
+    --danger: #ff6961;
+    --danger-foreground: #161617;
+  }
+}
