@@ -1,41 +1,68 @@
 # Toolbox
 
-Ferramentas para compressão, conversão e codificação de dados. O projeto é
-dividido em um frontend Next.js e um backend Go opcional para operações que não
-rodam no navegador.
+Utilitários para converter, codificar e compactar dados e arquivos com uma
+interface simples, processamento local por padrão e sem contas ou histórico.
 
-## Pré-requisitos
+## O que oferece
+
+- **Codificação:** Base64, Base32, Base58, hexadecimal, Unicode escape, JWT,
+  query strings e conversão de charset.
+- **Formatos:** conversões entre JSON, YAML, XML e CSV, além de formatar e
+  minificar JSON e XML.
+- **Compactação:** ZIP, GZIP, ZSTD, XZ, BZIP2, TAR e extração de ZIP, RAR e
+  7Z, entre outros formatos.
+- **PT e EN:** a interface começa em português e permite alternar o idioma no
+  cabeçalho; a escolha fica apenas no navegador.
+- **Tema claro e escuro:** acompanha o sistema até que a pessoa escolha um
+  tema.
+
+## Privacidade e processamento
+
+As conversões de texto e os formatos de arquivo compatíveis são processados
+inteiramente no navegador. O backend é usado somente quando o arquivo, o
+formato ou o nível de compactação exige recursos que o navegador não fornece.
+
+Quando o backend é usado, ele não mantém arquivos, histórico ou cache. Os
+temporários ficam em uma área de spool e são descartados ao término da
+requisição. Veja os detalhes de capacidade e segurança no
+[guia de deploy](server/deploy/README.md).
+
+## Arquitetura
+
+| Parte | Tecnologia | Responsabilidade |
+| --- | --- | --- |
+| [`web/`](web/) | Next.js, TypeScript e Web Workers | Interface, operações de texto e processamento local de arquivos |
+| [`server/`](server/) | Go | Formatos e cargas que precisam do servidor, com limites de tamanho e tempo |
+| [`openspec/`](openspec/) | OpenSpec | Escopo e especificações do produto |
+
+## Executar localmente
+
+### Pré-requisitos
 
 - Node.js e npm
-- Go 1.25.1 ou Docker com Docker Compose
+- Go 1.25.1 ou Docker com Docker Compose, caso use o backend
 
-## Rodar em desenvolvimento
+### 1. Inicie o backend opcional
 
-Abra dois terminais na raiz do projeto.
-
-### 1. Backend
-
-Com Go instalado:
+Abra um terminal na raiz do projeto:
 
 ```bash
 cd server
 ALLOWED_ORIGINS=http://localhost:3000 go run ./cmd/toolbox-server
 ```
 
-O backend ficará disponível em `http://localhost:8080`. Para verificar:
+O servidor escuta em `http://localhost:8080`. No desenvolvimento local, o
+spool usa automaticamente um diretório temporário seguro do sistema. Para
+usar outro local, informe `SPOOL_DIR=/tmp/toolbox-spool`.
 
-```bash
-curl http://localhost:8080/healthz
-```
-
-Alternativamente, usando Docker Compose:
+Com Docker:
 
 ```bash
 cd server/deploy
 docker compose up --build
 ```
 
-### 2. Frontend
+### 2. Inicie o frontend
 
 Em outro terminal:
 
@@ -45,34 +72,31 @@ npm install
 NEXT_PUBLIC_BACKEND_URL=http://localhost:8080 npm run dev
 ```
 
-Abra [http://localhost:3000](http://localhost:3000).
+Abra [http://localhost:3000](http://localhost:3000). Sem
+`NEXT_PUBLIC_BACKEND_URL`, as ferramentas que funcionam só no navegador
+continuam disponíveis.
 
-`NEXT_PUBLIC_BACKEND_URL` é opcional. Sem ela, as operações que exigem o
-backend ficam indisponíveis, mas as operações executadas inteiramente no
-navegador continuam funcionando.
+## Verificação
 
-## Comandos úteis
-
-No diretório `web/`:
+No frontend:
 
 ```bash
-npm run build       # build de produção
-npm run start       # inicia o build de produção
-npm run lint        # verifica o lint
-npm run typecheck   # verifica os tipos TypeScript
-npm test            # executa os testes
+cd web
+npm run lint
+npm run typecheck
+npm test
+npm run build
 ```
 
-No diretório `server/`:
+No backend:
 
 ```bash
-go test ./...       # executa os testes do backend
+cd server
+go test ./...
 go build ./cmd/toolbox-server
 ```
 
 ## Configuração do backend
-
-O backend usa `:8080` por padrão. As principais variáveis de ambiente são:
 
 | Variável | Padrão | Descrição |
 | --- | --- | --- |
@@ -80,10 +104,12 @@ O backend usa `:8080` por padrão. As principais variáveis de ambiente são:
 | `ALLOWED_ORIGINS` | vazio | Origens CORS, separadas por vírgula |
 | `REQUEST_MAX_BYTES` | `512 MB` | Tamanho máximo da requisição |
 | `MEM_BUFFER_MAX` | `64 MB` | Limite de conteúdo mantido em memória |
-| `SPOOL_DIR` | diretório temporário do sistema + `/toolbox-spool` | Diretório temporário para arquivos maiores e para preparar respostas antes do download |
+| `SPOOL_DIR` | `$TMPDIR/toolbox-spool` | Diretório temporário para arquivos grandes e staging de saída |
 | `REQUEST_TIMEOUT` | `120s` | Tempo máximo por requisição |
 
-No modo local, o diretório de spool é criado e validado na inicialização. Para
-escolher outro local, use por exemplo `SPOOL_DIR=/tmp/toolbox-spool`. O backend
-não persiste os arquivos processados. A configuração completa de deploy está
-em [`server/deploy/README.md`](server/deploy/README.md).
+Para limites de concorrência, capacidade da tmpfs, rate limiting e execução em
+produção, consulte o [guia de deploy do backend](server/deploy/README.md).
+
+## Licença
+
+Este projeto ainda não declara uma licença.
