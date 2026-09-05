@@ -9,6 +9,7 @@ import {
   storeTheme,
   type Theme,
 } from "@/lib/theme";
+import { useLanguage } from "@/lib/language";
 
 /**
  * O tema vive no documento (data-theme), carimbado pelo script de boot antes
@@ -42,6 +43,7 @@ function currentTheme(): Theme {
 }
 
 export function ThemeToggle() {
+  const { language } = useLanguage();
   const theme = useSyncExternalStore<Theme>(
     subscribe,
     currentTheme,
@@ -54,7 +56,9 @@ export function ThemeToggle() {
     storeTheme(next);
   }
 
-  const label = theme === "dark" ? "Usar tema claro" : "Usar tema escuro";
+  const label = theme === "dark"
+    ? (language === "pt" ? "Usar tema claro" : "Use light theme")
+    : (language === "pt" ? "Usar tema escuro" : "Use dark theme");
 
   return (
     <button

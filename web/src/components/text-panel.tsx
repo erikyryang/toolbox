@@ -5,6 +5,7 @@ import { Check, Copy, Download } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/lib/language";
 
 /**
  * Painel de texto em fonte mono. É o mesmo componente para entrada e saída —
@@ -74,6 +75,7 @@ export function TextPanel({
 }
 
 function CopyButton({ value }: { value: string }) {
+  const { language } = useLanguage();
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -97,10 +99,10 @@ function CopyButton({ value }: { value: string }) {
       size="sm"
       onClick={copy}
       disabled={value === ""}
-      aria-label={copied ? "Copiado" : "Copiar saída"}
+      aria-label={copied ? (language === "pt" ? "Copiado" : "Copied") : (language === "pt" ? "Copiar saída" : "Copy output")}
     >
       {copied ? <Check aria-hidden /> : <Copy aria-hidden />}
-      <span className="text-xs">{copied ? "Copiado" : "Copiar"}</span>
+      <span className="text-xs">{copied ? (language === "pt" ? "Copiado" : "Copied") : (language === "pt" ? "Copiar" : "Copy")}</span>
     </Button>
   );
 }
@@ -112,6 +114,7 @@ function DownloadButton({
   value: string;
   filename: string;
 }) {
+  const { language } = useLanguage();
   function download() {
     // O arquivo é montado e liberado no próprio navegador; nenhum byte sai
     // daqui e nada fica retido depois do clique.
@@ -130,10 +133,10 @@ function DownloadButton({
       size="sm"
       onClick={download}
       disabled={value === ""}
-      aria-label="Baixar saída"
+      aria-label={language === "pt" ? "Baixar saída" : "Download output"}
     >
       <Download aria-hidden />
-      <span className="text-xs">Baixar</span>
+      <span className="text-xs">{language === "pt" ? "Baixar" : "Download"}</span>
     </Button>
   );
 }

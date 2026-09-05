@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { OperationMenu } from "@/components/operation-menu";
+import { LanguageSelect } from "@/components/language-select";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { operationsByGroup } from "@/lib/operations/catalog";
 
@@ -20,7 +21,8 @@ export function SiteHeader() {
           <OperationMenu groups={operationsByGroup()} />
         </div>
 
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-1">
+          <LanguageSelect />
           <ThemeToggle />
         </div>
       </div>

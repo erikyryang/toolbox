@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { ChevronDown } from "lucide-react";
 
 import type { OperationGroup, OperationMeta } from "@/lib/operations/types";
+import { groupName, localizeOperation, useLanguage } from "@/lib/language";
 
 /**
  * Seletor de operações do header.
@@ -21,6 +22,7 @@ export function OperationMenu({
 }) {
   const ref = useRef<HTMLDetailsElement>(null);
   const pathname = usePathname();
+  const { language } = useLanguage();
 
   useEffect(() => {
     const details = ref.current;
@@ -53,21 +55,22 @@ export function OperationMenu({
   return (
     <details ref={ref} className="relative">
       <summary className="flex cursor-pointer list-none items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-text-muted transition-colors hover:bg-surface-raised hover:text-text [&::-webkit-details-marker]:hidden">
-        Operações
+        {language === "pt" ? "Operações" : "Tools"}
         <ChevronDown aria-hidden className="size-3.5" />
       </summary>
 
       <nav
-        aria-label="Operações"
+        aria-label={language === "pt" ? "Operações" : "Tools"}
         className="absolute left-0 top-full z-20 mt-1 min-w-56 rounded-md border border-border bg-surface-raised p-1.5"
       >
         {groups.map(({ group, items }) => (
           <div key={group} className="py-1">
             <p className="px-2 pb-1 text-xs uppercase tracking-wide text-text-muted">
-              {group}
+              {groupName(group, language)}
             </p>
             <ul>
               {items.map((operation) => {
+                const localized = localizeOperation(operation, language);
                 const href = `/${operation.slug}`;
                 const current = pathname === href;
                 return (
@@ -77,7 +80,7 @@ export function OperationMenu({
                       aria-current={current ? "page" : undefined}
                       className="block rounded-sm px-2 py-1.5 text-sm text-text transition-colors hover:bg-surface aria-[current=page]:text-accent-text"
                     >
-                      {operation.name}
+                      {localized.name}
                     </Link>
                   </li>
                 );

@@ -26,6 +26,7 @@ import { detectFormat } from "@/lib/compression/detect";
 import { CLIENT_MAX_BYTES, decideRouting, formatBytes, type RoutingDecision } from "@/lib/compression/limits";
 import type { OperationMeta, OptionValue, OptionValues } from "@/lib/operations/types";
 import { defaultOptionValues } from "@/lib/operations/types";
+import { useLanguage } from "@/lib/language";
 
 type Mode = "compress" | "decompress";
 
@@ -47,6 +48,7 @@ export function FileWorkspace({
   mode: Mode;
   format?: FormatId;
 }) {
+  const { language } = useLanguage();
   const [options, setOptions] = useState<OptionValues>(() => defaultOptionValues(operation));
   const [files, setFiles] = useState<Selected[]>([]);
   const [archive, setArchive] = useState<Archive | undefined>();
@@ -126,7 +128,7 @@ export function FileWorkspace({
       sizeBytes: file.size,
     });
     if (decision.where === "server" && !backendAvailable()) {
-      setError(backendUnavailable(decision));
+      setError(backendUnavailable(decision, language));
       return;
     }
 
@@ -138,7 +140,7 @@ export function FileWorkspace({
           : await client().inspect(file.data, file.name),
       );
     } catch (failure) {
-      setError(failure instanceof Error ? failure.message : "Falha ao ler o arquivo.");
+      setError(failure instanceof Error ? failure.message : language === "pt" ? "Falha ao ler o arquivo." : "Could not read the file.");
     } finally {
       setBusy(false);
     }
@@ -148,7 +150,7 @@ export function FileWorkspace({
     if (!format || files.length === 0) return;
 
     if (routing.where === "server" && !backendAvailable()) {
-      setError(backendUnavailable(routing));
+      setError(backendUnavailable(routing, language));
       return;
     }
 
@@ -163,7 +165,7 @@ export function FileWorkspace({
       const base = files.length === 1 ? files[0].name : "arquivos";
       setResult({ name: `${base}${FORMATS[format].extension}`, bytes });
     } catch (failure) {
-      setError(failure instanceof Error ? failure.message : "Falha ao compactar.");
+      setError(failure instanceof Error ? failure.message : language === "pt" ? "Falha ao compactar." : "Could not compress the files.");
     } finally {
       setBusy(false);
     }
@@ -186,7 +188,7 @@ export function FileWorkspace({
           : await client().extract(files[0].data, archive, entryName);
       setResult({ name: entryName?.split("/").pop() ?? archive.entries[0].name, bytes });
     } catch (failure) {
-      setError(failure instanceof Error ? failure.message : "Falha ao extrair.");
+      setError(failure instanceof Error ? failure.message : language === "pt" ? "Falha ao extrair." : "Could not extract the file.");
     } finally {
       setBusy(false);
     }
@@ -224,17 +226,19 @@ export function FileWorkspace({
             <Upload aria-hidden className="size-5 text-text-muted" />
             <span className="text-sm text-text">
               {mode === "compress"
-                ? "Escolha os arquivos para compactar"
-                : "Escolha o arquivo para descompactar"}
+                ? (language === "pt" ? "Escolha os arquivos para compactar" : "Choose files to compress")
+                : (language === "pt" ? "Escolha o arquivo para descompactar" : "Choose an archive to extract")}
             </span>
             <span className="text-xs text-text-muted">
               {mode === "compress" && format && FORMATS[format].container
-                ? "Vários arquivos podem ser selecionados de uma vez."
-                : "Um arquivo por vez."}
+                ? (language === "pt" ? "Vários arquivos podem ser selecionados de uma vez." : "You can select several files at once.")
+                : (language === "pt" ? "Um arquivo por vez." : "One file at a time.")}
             </span>
             {mode === "decompress" ? (
               <span className="max-w-lg text-xs text-text-muted">
-                ZIP, GZIP, TAR e XZ rodam localmente até {formatBytes(CLIENT_MAX_BYTES)}. ZSTD, BZIP2, RAR e 7Z usam o servidor.
+                {language === "pt"
+                  ? <>ZIP, GZIP, TAR e XZ rodam localmente até {formatBytes(CLIENT_MAX_BYTES)}. ZSTD, BZIP2, RAR e 7Z usam o servidor.</>
+                  : <>ZIP, GZIP, TAR, and XZ run locally up to {formatBytes(CLIENT_MAX_BYTES)}. ZSTD, BZIP2, RAR, and 7Z use the server.</>}
               </span>
             ) : null}
           </label>
@@ -270,12 +274,12 @@ export function FileWorkspace({
           <section className="flex flex-wrap items-center gap-3">
             <Button variant="primary" size="md" onClick={runCompress} disabled={compressDisabled}>
               {busy ? <Loader2 aria-hidden className="animate-spin" /> : null}
-              <span>Compactar em {format ? FORMATS[format].label : ""}</span>
+              <span>{language === "pt" ? "Compactar em" : "Compress to"} {format ? FORMATS[format].label : ""}</span>
             </Button>
 
             {format && FORMATS[format].levels ? (
               <p className="text-xs text-text-muted">
-                {PRESET_LABELS[preset]} — nível {level} de {FORMATS[format].levels.min}–
+                {language === "pt" ? PRESET_LABELS[preset] : ({ fast: "Fast", balanced: "Balanced", max: "Maximum", custom: "Custom" }[preset])} — {language === "pt" ? "nível" : "level"} {level} {language === "pt" ? "de" : "of"} {FORMATS[format].levels.min}–
                 {FORMATS[format].levels.max}
               </p>
             ) : null}
@@ -283,7 +287,7 @@ export function FileWorkspace({
             {busy ? (
               <Button variant="ghost" size="sm" onClick={reset}>
                 <X aria-hidden />
-                <span>Cancelar</span>
+                <span>{language === "pt" ? "Cancelar" : "Cancel"}</span>
               </Button>
             ) : null}
           </section>
@@ -292,7 +296,7 @@ export function FileWorkspace({
         {archive ? (
           <section className="flex flex-col gap-3">
             <h2 className="text-xs uppercase tracking-wide text-text-muted">
-              Conteúdo ({FORMATS[archive.format].label})
+              {language === "pt" ? "Conteúdo" : "Contents"} ({FORMATS[archive.format].label})
             </h2>
 
             <ul className="divide-y divide-border overflow-hidden rounded-md border border-border">
@@ -307,11 +311,11 @@ export function FileWorkspace({
                   <span className="shrink-0 font-mono text-xs text-text-muted">
                     {formatBytes(entry.size)}
                     {entry.compressedSize !== undefined
-                      ? ` · comprimido ${formatBytes(entry.compressedSize)}`
+                      ? language === "pt" ? ` · comprimido ${formatBytes(entry.compressedSize)}` : ` · compressed ${formatBytes(entry.compressedSize)}`
                       : ""}
                   </span>
                   {entry.directory ? (
-                    <span className="text-xs text-text-muted">pasta</span>
+                    <span className="text-xs text-text-muted">{language === "pt" ? "pasta" : "folder"}</span>
                   ) : (
                     <Button
                       variant="outline"
@@ -319,7 +323,7 @@ export function FileWorkspace({
                       onClick={() => extractEntry(archive.single ? undefined : entry.name)}
                       disabled={busy}
                     >
-                      Extrair
+                      {language === "pt" ? "Extrair" : "Extract"}
                     </Button>
                   )}
                 </li>
@@ -332,12 +336,12 @@ export function FileWorkspace({
           <section className="flex flex-wrap items-center gap-3 border-t border-border pt-4">
             <Button variant="primary" size="md" onClick={download}>
               <Download aria-hidden />
-              <span>Baixar {result.name}</span>
+              <span>{language === "pt" ? "Baixar" : "Download"} {result.name}</span>
             </Button>
             <p className="font-mono text-xs text-text-muted">
               {formatBytes(result.bytes.length)}
               {mode === "compress" && totalSize > 0
-                ? ` · ${Math.round((result.bytes.length / totalSize) * 100)}% do original`
+                ? language === "pt" ? ` · ${Math.round((result.bytes.length / totalSize) * 100)}% do original` : ` · ${Math.round((result.bytes.length / totalSize) * 100)}% of original`
                 : ""}
             </p>
           </section>
@@ -361,8 +365,10 @@ export function FileWorkspace({
  * para ele não tem para onde ir — e dizer isso é melhor do que oferecer um
  * botão que falha.
  */
-function backendUnavailable(routing: RoutingDecision): string {
-  return `Esta operação precisa do servidor (${routing.reason}), que ainda não está disponível. Enquanto isso, use um arquivo dentro do limite local ou outro formato.`;
+function backendUnavailable(routing: RoutingDecision, language: "pt" | "en"): string {
+  return language === "pt"
+    ? `Esta operação precisa do servidor (${routing.reason}), que ainda não está disponível. Enquanto isso, use um arquivo dentro do limite local ou outro formato.`
+    : `This operation needs the server (${routing.reason}), which is not available yet. Use a file within the local limit or another format.`;
 }
 
 export { clampLevel };

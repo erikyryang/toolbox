@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { SiteHeader } from "@/components/site-header";
 import { OperationSidebar } from "@/components/operation-sidebar";
 import { fontVariables } from "@/design/fonts";
+import { LanguageProvider, languageBootScript } from "@/lib/language";
 import { themeBootScript } from "@/lib/theme";
 import { operationsByGroup } from "@/lib/operations/catalog";
 import "./globals.css";
@@ -26,14 +27,17 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           Resolve o tema antes da primeira pintura. Sem isto, uma preferência
           escura apareceria depois de um flash de tema claro.
         */}
+        <script dangerouslySetInnerHTML={{ __html: languageBootScript }} />
         <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
       </head>
       <body className="flex min-h-full flex-col">
-        <SiteHeader />
-        <div className="flex min-h-0 flex-1">
-          <OperationSidebar groups={operationsByGroup()} />
-          <div className="min-w-0 flex-1">{children}</div>
-        </div>
+        <LanguageProvider>
+          <SiteHeader />
+          <div className="flex min-h-0 flex-1">
+            <OperationSidebar groups={operationsByGroup()} />
+            <div className="min-w-0 flex-1">{children}</div>
+          </div>
+        </LanguageProvider>
       </body>
     </html>
   );

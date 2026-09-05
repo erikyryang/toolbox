@@ -4,6 +4,7 @@ import { useId } from "react";
 import { ChevronRight } from "lucide-react";
 
 import type { OptionSpec, OptionValue, OptionValues } from "@/lib/operations/types";
+import { useLanguage } from "@/lib/language";
 
 /**
  * Opções avançadas atrás de um disclosure. Nascem recolhidas, com os padrões
@@ -21,6 +22,7 @@ export function AdvancedOptions({
   values: OptionValues;
   onChange: (id: string, value: OptionValue) => void;
 }) {
+  const { language } = useLanguage();
   if (options.length === 0) return null;
 
   return (
@@ -30,8 +32,8 @@ export function AdvancedOptions({
           aria-hidden
           className="size-3.5 transition-transform group-open:rotate-90"
         />
-        Opções avançadas
-        <span className="text-xs text-text-muted">· {options.length} controles</span>
+        {language === "pt" ? "Opções avançadas" : "Advanced options"}
+        <span className="text-xs text-text-muted">· {options.length} {language === "pt" ? "controles" : "controls"}</span>
       </summary>
 
       <div className="flex flex-col gap-4 pt-4 sm:flex-row sm:flex-wrap sm:gap-8">

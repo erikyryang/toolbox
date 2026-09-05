@@ -17,6 +17,7 @@ import {
   type OptionValue,
 } from "@/lib/operations/types";
 import { useDebounced } from "@/lib/use-debounced";
+import { localizeOperation, useLanguage } from "@/lib/language";
 
 /**
  * A tela de uma operação: título serifado, dois painéis mono, opções atrás de
@@ -38,6 +39,8 @@ export function OperationWorkspace({ slug }: { slug: string }) {
 }
 
 function Workspace({ operation }: { operation: Operation }) {
+  const { language } = useLanguage();
+  const localized = localizeOperation(operation, language) as Operation;
   const [input, setInput] = useState("");
   const [direction, setDirection] = useState<Direction>("forward");
   const [options, setOptions] = useState(() => defaultOptionValues(operation));
@@ -50,12 +53,12 @@ function Workspace({ operation }: { operation: Operation }) {
     [operation, direction, debouncedInput, options],
   );
 
-  const active = directionOf(operation, direction);
+  const active = directionOf(localized, direction);
   const output = outcome.ok ? outcome.output : "";
 
   const setOption = useCallback((id: string, value: OptionValue) => {
     setOptions((current) => ({ ...current, [id]: value }));
-  }, []);
+  }, [setOptions]);
 
   /**
    * Ações rápidas preenchem a entrada com um valor gerado na hora. O catálogo
@@ -80,13 +83,13 @@ function Workspace({ operation }: { operation: Operation }) {
     <main className="mx-auto w-full max-w-[var(--content-max-width)] px-4 py-10 sm:px-6 sm:py-14">
       <header className="flex flex-col gap-2">
         <h1 className="text-3xl font-semibold tracking-tight text-text">
-          {operation.title}
+          {localized.title}
         </h1>
-        <p className="max-w-2xl text-sm text-text-muted">{operation.subtitle}</p>
+        <p className="max-w-2xl text-sm text-text-muted">{localized.subtitle}</p>
       </header>
 
       <div className="mt-10 flex flex-col gap-3">
-        {operation.reverse ? (
+        {localized.reverse ? (
           <div className="flex items-center gap-3">
             <Button
               variant="outline"
@@ -94,8 +97,8 @@ function Workspace({ operation }: { operation: Operation }) {
               onClick={invert}
               aria-label={`Inverter para ${
                 direction === "forward"
-                  ? operation.reverse.label
-                  : operation.forward.label
+                  ? localized.reverse.label
+                  : localized.forward.label
               }`}
             >
               <ArrowLeftRight aria-hidden />
@@ -115,7 +118,7 @@ function Workspace({ operation }: { operation: Operation }) {
                 className="ml-auto"
               >
                 <Clock aria-hidden />
-                <span>Agora</span>
+                <span>{language === "pt" ? "Agora" : "Now"}</span>
               </Button>
             ) : null}
           </div>
@@ -127,7 +130,7 @@ function Workspace({ operation }: { operation: Operation }) {
               label={active.inputLabel}
               value={input}
               onChange={setInput}
-              placeholder={operation.placeholder}
+              placeholder={localized.placeholder}
               invalid={!outcome.ok}
               describedById={outcome.ok ? undefined : errorId}
             />
@@ -161,7 +164,7 @@ function Workspace({ operation }: { operation: Operation }) {
 
         <div className="mt-4">
           <AdvancedOptions
-            options={operation.options}
+            options={localized.options}
             values={options}
             onChange={setOption}
           />
