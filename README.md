@@ -1,70 +1,69 @@
 # Toolbox
 
-Utilitários para converter, codificar e compactar dados e arquivos com uma
-interface simples, processamento local por padrão e sem contas ou histórico.
+Utilities for converting, encoding, and compressing data and files, with a
+simple interface, browser-first processing, and no accounts or history.
 
-## O que oferece
+## Features
 
-- **Codificação:** Base64, Base32, Base58, hexadecimal, Unicode escape, JWT,
-  query strings e conversão de charset.
-- **Formatos:** conversões entre JSON, YAML, XML e CSV, além de formatar e
-  minificar JSON e XML.
-- **Compactação:** ZIP, GZIP, ZSTD, XZ, BZIP2, TAR e extração de ZIP, RAR e
-  7Z, entre outros formatos.
-- **PT e EN:** a interface começa em português e permite alternar o idioma no
-  cabeçalho; a escolha fica apenas no navegador.
-- **Tema claro e escuro:** acompanha o sistema até que a pessoa escolha um
-  tema.
+- **Encoding:** Base64, Base32, Base58, hexadecimal, Unicode escape, JWT,
+  query strings, and charset conversion.
+- **Formats:** conversion between JSON, YAML, XML, and CSV, plus JSON and XML
+  formatting and minification.
+- **Compression:** ZIP, GZIP, ZSTD, XZ, BZIP2, TAR, and extraction for ZIP,
+  RAR, 7Z, and other formats.
+- **Portuguese and English:** the interface starts in Portuguese and can be
+  switched from the header. The preference stays only in the browser.
+- **Light and dark themes:** follows the system setting until a theme is
+  selected.
 
-## Privacidade e processamento
+## Privacy and processing
 
-As conversões de texto e os formatos de arquivo compatíveis são processados
-inteiramente no navegador. O backend é usado somente quando o arquivo, o
-formato ou o nível de compactação exige recursos que o navegador não fornece.
+Text conversions and supported file formats run entirely in the browser. The
+backend is used only when a file, format, or compression level needs resources
+that the browser cannot provide.
 
-Quando o backend é usado, ele não mantém arquivos, histórico ou cache. Os
-temporários ficam em uma área de spool e são descartados ao término da
-requisição. Veja os detalhes de capacidade e segurança no
-[guia de deploy](server/deploy/README.md).
+When the backend is used, it does not keep files, history, or cache. Temporary
+files live in a spool area and are discarded when the request ends. See the
+[deployment guide](server/deploy/README.md) for capacity and security details.
 
-## Arquitetura
+## Architecture
 
-| Parte | Tecnologia | Responsabilidade |
+| Part | Technology | Responsibility |
 | --- | --- | --- |
-| [`web/`](web/) | Next.js, TypeScript e Web Workers | Interface, operações de texto e processamento local de arquivos |
-| [`server/`](server/) | Go | Formatos e cargas que precisam do servidor, com limites de tamanho e tempo |
-| [`openspec/`](openspec/) | OpenSpec | Escopo e especificações do produto |
+| [`web/`](web/) | Next.js, TypeScript, and Web Workers | Interface, text operations, and local file processing |
+| [`server/`](server/) | Go | Formats and workloads that need the server, with size and time limits |
+| [`openspec/`](openspec/) | OpenSpec | Product scope and specifications |
 
-## Executar localmente
+## Run locally
 
-### Pré-requisitos
+### Prerequisites
 
-- Node.js e npm
-- Go 1.25.1 ou Docker com Docker Compose, caso use o backend
+- Node.js and npm
+- Go 1.25.1 or Docker with Docker Compose when using the backend
 
-### 1. Inicie o backend opcional
+### 1. Start the optional backend
 
-Abra um terminal na raiz do projeto:
+Open a terminal at the project root:
 
 ```bash
 cd server
 ALLOWED_ORIGINS=http://localhost:3000 go run ./cmd/toolbox-server
 ```
 
-O servidor escuta em `http://localhost:8080`. No desenvolvimento local, o
-spool usa automaticamente um diretório temporário seguro do sistema. Para
-usar outro local, informe `SPOOL_DIR=/tmp/toolbox-spool`.
+The server listens on `http://localhost:8080`. During local development, the
+spool automatically uses a secure system temporary directory. To choose
+another location, set `SPOOL_DIR=/tmp/toolbox-spool`.
 
-Com Docker:
+With Docker:
 
 ```bash
 cd server/deploy
 docker compose up --build
 ```
 
-### 2. Inicie o frontend
+### 2. Start the frontend
 
-Em outro terminal:
+In another terminal:
 
 ```bash
 cd web
@@ -72,13 +71,12 @@ npm install
 NEXT_PUBLIC_BACKEND_URL=http://localhost:8080 npm run dev
 ```
 
-Abra [http://localhost:3000](http://localhost:3000). Sem
-`NEXT_PUBLIC_BACKEND_URL`, as ferramentas que funcionam só no navegador
-continuam disponíveis.
+Open [http://localhost:3000](http://localhost:3000). Without
+`NEXT_PUBLIC_BACKEND_URL`, browser-only tools remain available.
 
-## Verificação
+## Validation
 
-No frontend:
+Frontend:
 
 ```bash
 cd web
@@ -88,7 +86,7 @@ npm test
 npm run build
 ```
 
-No backend:
+Backend:
 
 ```bash
 cd server
@@ -96,20 +94,20 @@ go test ./...
 go build ./cmd/toolbox-server
 ```
 
-## Configuração do backend
+## Backend configuration
 
-| Variável | Padrão | Descrição |
+| Variable | Default | Description |
 | --- | --- | --- |
-| `ADDR` | `:8080` | Endereço de escuta |
-| `ALLOWED_ORIGINS` | vazio | Origens CORS, separadas por vírgula |
-| `REQUEST_MAX_BYTES` | `512 MB` | Tamanho máximo da requisição |
-| `MEM_BUFFER_MAX` | `64 MB` | Limite de conteúdo mantido em memória |
-| `SPOOL_DIR` | `$TMPDIR/toolbox-spool` | Diretório temporário para arquivos grandes e staging de saída |
-| `REQUEST_TIMEOUT` | `120s` | Tempo máximo por requisição |
+| `ADDR` | `:8080` | Listen address |
+| `ALLOWED_ORIGINS` | empty | Comma-separated CORS origins |
+| `REQUEST_MAX_BYTES` | `512 MB` | Maximum request size |
+| `MEM_BUFFER_MAX` | `64 MB` | Maximum content kept in memory |
+| `SPOOL_DIR` | `$TMPDIR/toolbox-spool` | Temporary directory for large files and staged output |
+| `REQUEST_TIMEOUT` | `120s` | Maximum request duration |
 
-Para limites de concorrência, capacidade da tmpfs, rate limiting e execução em
-produção, consulte o [guia de deploy do backend](server/deploy/README.md).
+For concurrency limits, tmpfs capacity, rate limiting, and production
+operation, see the [backend deployment guide](server/deploy/README.md).
 
-## Licença
+## License
 
-Este projeto ainda não declara uma licença.
+This project does not declare a license yet.
