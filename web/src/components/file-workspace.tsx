@@ -24,6 +24,7 @@ import {
   type Preset,
 } from "@/lib/compression/formats";
 import { detectFormat } from "@/lib/compression/detect";
+import { TEXT_ENCODING_LABELS, decodeArchiveText, pastedFileName } from "@/lib/compression/from-text";
 import { levelOptionsFor } from "@/lib/operations/compression-catalog";
 import { CLIENT_MAX_BYTES, decideRouting, formatBytes, type RoutingDecision } from "@/lib/compression/limits";
 import type { OperationMeta, OptionValue, OptionValues } from "@/lib/operations/types";
@@ -32,6 +33,9 @@ import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/language";
 
 type Mode = "compress" | "decompress";
+
+/** De onde vem o arquivo a descompactar. Compactar sempre parte de arquivos. */
+type Source = "file" | "text";
 
 /** Valores padrão das opções de nível de um formato. */
 function optionValuesFor(format: FormatId): OptionValues {
@@ -73,10 +77,14 @@ export function FileWorkspace({
   const [detectedFormat, setDetectedFormat] = useState<FormatId | undefined>();
   const [busy, setBusy] = useState(false);
   const [dragging, setDragging] = useState(false);
+  const [source, setSource] = useState<Source>("file");
+  const [pasted, setPasted] = useState("");
+  const [pastedNote, setPastedNote] = useState<string | undefined>();
   const [error, setError] = useState<string | undefined>();
   const [result, setResult] = useState<{ name: string; bytes: Uint8Array } | undefined>();
 
   const inputId = useId();
+  const pasteId = useId();
   const errorId = useId();
   const clientRef = useRef<CompressionClient | undefined>(undefined);
 
@@ -162,6 +170,53 @@ export function FileWorkspace({
     setError(undefined);
     setBusy(false);
     setDragging(false);
+    setPastedNote(undefined);
+  }
+
+  function changeSource(next: Source) {
+    if (next === source) return;
+    reset();
+    setPasted("");
+    setSource(next);
+  }
+
+  /**
+   * Lê o texto colado como um arquivo e segue pelo mesmo caminho da seleção.
+   *
+   * A partir daqui nada distingue os dois caminhos: a inspeção, a decisão de
+   * roteamento e a extração recebem os mesmos bytes que receberiam de um
+   * arquivo escolhido no disco.
+   */
+  async function readPasted() {
+    setError(undefined);
+    setResult(undefined);
+    setArchive(undefined);
+    setPastedNote(undefined);
+
+    let decoded;
+    try {
+      decoded = decodeArchiveText(pasted);
+    } catch (failure) {
+      setError(failure instanceof Error ? failure.message : "Não foi possível ler o texto.");
+      return;
+    }
+
+    const name = pastedFileName(decoded.format, language);
+    // A cópia isola os bytes do buffer do worker, que pode ser transferido.
+    const selected: Selected = {
+      name,
+      size: decoded.bytes.length,
+      data: decoded.bytes.slice().buffer as ArrayBuffer,
+    };
+
+    setPastedNote(
+      language === "pt"
+        ? `Lido como ${TEXT_ENCODING_LABELS[decoded.encoding]}${decoded.dataUrl ? " dentro de um data: URL" : ""} — ${FORMATS[decoded.format].label}, ${formatBytes(selected.size)}.`
+        : `Read as ${TEXT_ENCODING_LABELS[decoded.encoding]}${decoded.dataUrl ? " inside a data: URL" : ""} — ${FORMATS[decoded.format].label}, ${formatBytes(selected.size)}.`,
+    );
+    setDetectedFormat(decoded.format);
+    setFiles([selected]);
+    await inspectFile(selected, decoded.format);
   }
 
   async function onSelect(list: FileList | null) {
@@ -331,6 +386,87 @@ export function FileWorkspace({
           </section>
         ) : null}
 
+        {!compressing ? (
+          <section className="flex flex-col gap-2">
+            <h2 className="text-xs uppercase tracking-wide text-text-muted">
+              {language === "pt" ? "Origem" : "Source"}
+            </h2>
+            <div className="flex flex-wrap items-center gap-3">
+              <div
+                role="group"
+                aria-label={language === "pt" ? "Origem do arquivo" : "Where the archive comes from"}
+                className="inline-flex rounded-lg border border-border-interactive p-0.5"
+              >
+                {(["file", "text"] as Source[]).map((option) => {
+                  const current = option === source;
+                  return (
+                    <button
+                      key={option}
+                      type="button"
+                      aria-pressed={current}
+                      onClick={() => changeSource(option)}
+                      className={cn(
+                        "rounded-md px-3 py-1 text-sm transition-colors",
+                        current
+                          ? "bg-accent-solid font-medium text-accent-foreground"
+                          : "text-text-muted hover:text-text",
+                      )}
+                    >
+                      {option === "file"
+                        ? (language === "pt" ? "Arquivo" : "File")
+                        : (language === "pt" ? "Texto" : "Text")}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-xs text-text-muted">
+                {source === "file"
+                  ? (language === "pt" ? "Escolhido do disco ou arrastado." : "Chosen from disk or dragged in.")
+                  : (language === "pt"
+                      ? "Base64, hexadecimal ou data: URL — a codificação é detectada."
+                      : "Base64, hex, or a data: URL — the encoding is detected.")}
+              </p>
+            </div>
+          </section>
+        ) : null}
+
+        {source === "text" && !compressing ? (
+          <section className="flex flex-col gap-3">
+            <label htmlFor={pasteId} className="text-xs uppercase tracking-wide text-text-muted">
+              {language === "pt" ? "Conteúdo codificado" : "Encoded contents"}
+            </label>
+            <textarea
+              id={pasteId}
+              value={pasted}
+              onChange={(event) => setPasted(event.target.value)}
+              spellCheck={false}
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="off"
+              placeholder="UEsDBAoAAAAAAA..."
+              aria-describedby={error ? errorId : undefined}
+              className="min-h-32 w-full resize-y rounded-xl border border-border-interactive bg-surface-raised p-4 font-mono text-sm leading-relaxed text-text placeholder:text-text-muted md:min-h-40"
+            />
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                variant="primary"
+                size="md"
+                onClick={readPasted}
+                disabled={busy || pasted.trim() === ""}
+              >
+                {busy ? <Loader2 aria-hidden className="animate-spin" /> : null}
+                <span>{language === "pt" ? "Abrir" : "Open"}</span>
+              </Button>
+              {pasted !== "" ? (
+                <Button variant="ghost" size="sm" onClick={() => { setPasted(""); reset(); }}>
+                  <X aria-hidden />
+                  <span>{language === "pt" ? "Limpar" : "Clear"}</span>
+                </Button>
+              ) : null}
+              {pastedNote ? <p className="text-xs text-text-muted">{pastedNote}</p> : null}
+            </div>
+          </section>
+        ) : (
         <section className="flex flex-col gap-3">
           <label
             htmlFor={inputId}
@@ -389,6 +525,7 @@ export function FileWorkspace({
             </ul>
           ) : null}
         </section>
+        )}
 
         {error ? (
           <p id={errorId} role="alert" className="text-sm text-danger">

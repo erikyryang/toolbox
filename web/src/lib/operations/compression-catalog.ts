@@ -133,15 +133,16 @@ export const decompressOperation: OperationMeta = {
   name: "Descompactar",
   title: "Descompactar",
   subtitle:
-    "Abre ZIP, TAR e GZIP no navegador e lista o conteúdo antes de extrair. ZSTD, RAR e 7Z vão para o servidor.",
+    "Abra um arquivo do disco ou cole o conteúdo em Base64 e liste o que há dentro antes de extrair.",
   description:
-    "Descompactador de ZIP, RAR, 7Z, TAR, GZIP e ZSTD, com listagem de entradas e extração seletiva.",
+    "Descompactador de ZIP, RAR, 7Z, TAR, GZIP e ZSTD, a partir de arquivo ou de conteúdo colado em Base64, com listagem de entradas e extração seletiva.",
   group: "Compactação",
   kind: "file",
   execution: "auto",
   aliases: [
     "descompactar", "extrair", "abrir", "unzip", "gunzip", "untar",
     "extract", "unarchive", "zip", "rar", "7z", "tar", "gzip", "zstd",
+    "base64", "b64", "colar", "paste", "data url", "hex",
   ],
   forward: {
     label: "Descompactar",
