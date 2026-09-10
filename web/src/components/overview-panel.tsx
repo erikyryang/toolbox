@@ -7,6 +7,7 @@ import { ArrowUpRight, Search } from "lucide-react";
 import type { OperationGroup, OperationMeta } from "@/lib/operations/types";
 import { groupName, localeOf, localizeOperation, matchesQuery, useLanguage } from "@/lib/language";
 import { QUICK_START_SLUGS } from "@/lib/operations/catalog";
+import { TypedHeading } from "@/components/typed-heading";
 
 export function OverviewPanel({
   groups,
@@ -33,15 +34,18 @@ export function OverviewPanel({
         <p className="text-sm text-text-muted" aria-hidden>
           you@toolbox:~$ ls
         </p>
-        <h1 className="mt-2 text-display font-bold leading-tight tracking-tight text-text">
-          {language === "pt" ? "O que você quer fazer?" : "What would you like to do?"}
-        </h1>
+        <TypedHeading
+          className="mt-2 text-display font-bold leading-tight tracking-tight text-text"
+          text={language === "pt" ? "O que você quer fazer?" : "What would you like to do?"}
+        />
         <p className="mt-3 text-md text-text-muted">
           {language === "pt" ? "Escolha uma ferramenta na barra lateral ou encontre uma por aqui." : "Choose a tool from the sidebar or find one here."}
         </p>
       </header>
 
-      <label className="relative mt-8 block max-w-2xl">
+      {/* A busca acompanha a largura da fileira de cartões abaixo, e não a
+          do texto acima: as duas caixas terminam na mesma borda. */}
+      <label className="relative mt-8 block">
         <Search aria-hidden className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-text-muted" />
         <span className="sr-only">{language === "pt" ? "Buscar ferramenta" : "Search tools"}</span>
         <input
