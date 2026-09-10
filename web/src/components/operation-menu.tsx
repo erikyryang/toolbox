@@ -54,7 +54,7 @@ export function OperationMenu({
 
   return (
     <details ref={ref} className="relative">
-      <summary className="flex cursor-pointer list-none items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-text-muted transition-colors hover:bg-surface-raised hover:text-text [&::-webkit-details-marker]:hidden">
+      <summary className="flex cursor-pointer list-none items-center gap-1.5 rounded-md border border-border px-2 py-1 text-xs uppercase leading-normal tracking-label text-text transition-colors hover:border-accent hover:text-accent-text [&::-webkit-details-marker]:hidden">
         {language === "pt" ? "Operações" : "Tools"}
         <ChevronDown aria-hidden className="size-3.5" />
       </summary>
@@ -65,7 +65,7 @@ export function OperationMenu({
       >
         {groups.map(({ group, items }) => (
           <div key={group} className="py-1">
-            <p className="px-2 pb-1 text-xs uppercase tracking-wide text-text-muted">
+            <p className="section-title px-2 pb-1">
               {groupName(group, language)}
             </p>
             <ul>
@@ -78,7 +78,7 @@ export function OperationMenu({
                     <Link
                       href={href}
                       aria-current={current ? "page" : undefined}
-                      className="block rounded-sm px-2 py-1.5 text-sm text-text transition-colors hover:bg-surface aria-[current=page]:text-accent-text"
+                      className="block rounded-md px-2 py-1.5 text-sm text-text transition-colors hover:bg-surface aria-[current=page]:text-accent-text"
                     >
                       {localized.name}
                     </Link>

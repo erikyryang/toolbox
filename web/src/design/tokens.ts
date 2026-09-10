@@ -15,62 +15,71 @@
 // ---------------------------------------------------------------------------
 
 /**
- * Rampa neutra inspirada nas superfícies de sistema: fria, clara e sem branco
- * ou preto puros, para reduzir o brilho sem perder nitidez.
+ * Rampa de papel: areia quente, sem branco ou preto puros e sem nenhum passo
+ * com o canal azul acima do vermelho. É a mesma família de tons de
+ * erikyryan.dev.br — papel envelhecido, tinta sépia.
  */
-export const gray = {
-  50: "#f5f5f7",
-  100: "#fbfbfd",
-  200: "#d2d2d7",
-  300: "#a1a1a6",
-  400: "#86868b",
-  500: "#6e6e73",
-  600: "#515154",
-  700: "#424245",
-  800: "#2d2d2f",
-  900: "#1d1d1f",
-  950: "#161617",
-  ink: "#1d1d1f",
-  paper: "#f5f5f7",
-  mutedDark: "#a1a1a6",
+export const sand = {
+  paper: "#faf7f1",
+  panel: "#f3ebdd",
+  line: "#e2dac9",
+  faint: "#877c6c",
+  muted: "#6b6255",
+  ink: "#201c15",
+  paperDark: "#171310",
+  panelDark: "#26201a",
+  lineDark: "#332b21",
+  faintDark: "#7d7565",
+  mutedDark: "#a49988",
+  inkDark: "#ede5d8",
 } as const;
 
-/** Azul reservado a ações e foco; a interface não depende dele para contexto. */
-export const blue = {
-  300: "#2997ff",
-  400: "#0a84ff",
-  500: "#0071e3",
-  600: "#0066cc",
-  700: "#004f9e",
+/**
+ * Terracota, reservado a ação primária, foco e marcador de lista. A variante
+ * escura clareia porque o mesmo tom sobre papel escuro perde legibilidade.
+ */
+export const rust = {
+  400: "#f0946a",
+  500: "#e0784a",
+  600: "#b3431f",
+  700: "#8a2f16",
+  ink: "#fff8f2",
+  inkDark: "#1a1109",
 } as const;
 
+/**
+ * Carmim para erro. Tem componente azul de propósito: é o que o separa do
+ * terracota do acento, que significa ação e não falha.
+ */
 export const red = {
-  300: "#ff6961",
-  700: "#c41e3a",
+  300: "#f08a92",
+  700: "#a11d33",
 } as const;
 
 /**
  * Paleta de realce de sintaxe. Só existe para o conteúdo técnico dos painéis
  * de saída; nenhum outro lugar da interface deve usá-la. Cada cor foi
- * escolhida para atingir 4.5:1 sobre as duas superfícies, nos dois temas — a
- * verificação de contraste cobre isso.
+ * escolhida para assentar sobre papel quente, atingir 4.5:1 sobre a
+ * superfície de painel nos dois temas e não ser confundível com o acento — a
+ * verificação de contraste cobre as duas primeiras, e um teste próprio cobre
+ * a terceira.
  */
 export const syntaxLight = {
-  key: "#0a53b8",
-  string: "#0a6b3d",
+  key: "#0f5b70",
+  string: "#3d6b35",
   number: "#8a4b00",
-  atom: "#6b34c9",
-  attr: "#0a6068",
-  punct: "#515154",
+  atom: "#9b2c5a",
+  attr: "#7340a8",
+  punct: "#6b6255",
 } as const;
 
 export const syntaxDark = {
-  key: "#79c0ff",
-  string: "#7ee787",
-  number: "#ffa657",
-  atom: "#d2a8ff",
-  attr: "#56d4dd",
-  punct: "#a1a1a6",
+  key: "#6fbfd4",
+  string: "#9ccf7f",
+  number: "#e0b371",
+  atom: "#f08fb8",
+  attr: "#c4a2f0",
+  punct: "#a49988",
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -105,20 +114,20 @@ export type ThemeName = "light" | "dark";
 
 export const themes: Record<ThemeName, Record<SemanticToken, string>> = {
   light: {
-    surface: gray[50],
-    "surface-raised": gray[100],
-    text: gray.ink,
-    "text-muted": gray[600],
-    border: gray[200],
-    "border-interactive": gray[400],
-    accent: blue[500],
-    "accent-solid": blue[600],
-    "accent-solid-hover": blue[700],
-    "accent-foreground": gray[100],
-    "accent-text": blue[700],
-    "focus-ring": blue[500],
+    surface: sand.paper,
+    "surface-raised": sand.panel,
+    text: sand.ink,
+    "text-muted": sand.muted,
+    border: sand.line,
+    "border-interactive": sand.faint,
+    accent: rust[600],
+    "accent-solid": rust[600],
+    "accent-solid-hover": rust[700],
+    "accent-foreground": rust.ink,
+    "accent-text": rust[600],
+    "focus-ring": rust[700],
     danger: red[700],
-    "danger-foreground": gray[100],
+    "danger-foreground": rust.ink,
     "syntax-key": syntaxLight.key,
     "syntax-string": syntaxLight.string,
     "syntax-number": syntaxLight.number,
@@ -127,20 +136,20 @@ export const themes: Record<ThemeName, Record<SemanticToken, string>> = {
     "syntax-punct": syntaxLight.punct,
   },
   dark: {
-    surface: gray[950],
-    "surface-raised": gray[900],
-    text: gray.paper,
-    "text-muted": gray.mutedDark,
-    border: gray[800],
-    "border-interactive": gray[500],
-    accent: blue[300],
-    "accent-solid": blue[400],
-    "accent-solid-hover": blue[300],
-    "accent-foreground": gray[950],
-    "accent-text": blue[300],
-    "focus-ring": blue[300],
+    surface: sand.paperDark,
+    "surface-raised": sand.panelDark,
+    text: sand.inkDark,
+    "text-muted": sand.mutedDark,
+    border: sand.lineDark,
+    "border-interactive": sand.faintDark,
+    accent: rust[500],
+    "accent-solid": rust[500],
+    "accent-solid-hover": rust[400],
+    "accent-foreground": rust.inkDark,
+    "accent-text": rust[500],
+    "focus-ring": rust[400],
     danger: red[300],
-    "danger-foreground": gray[950],
+    "danger-foreground": rust.inkDark,
     "syntax-key": syntaxDark.key,
     "syntax-string": syntaxDark.string,
     "syntax-number": syntaxDark.number,
@@ -210,30 +219,43 @@ export const contrastPairs: ContrastPair[] = [
 // ---------------------------------------------------------------------------
 
 /**
- * Interface e títulos seguem a pilha de fontes do sistema. JetBrains Mono
- * fica reservado ao conteúdo técnico para preservar densidade e precisão.
+ * Uma família só, mono, em interface e em conteúdo técnico. Não existe token
+ * de serifada ou de sem serifa: o sistema não carrega nenhuma outra fonte.
  */
 export const fontFamilies = {
-  sans: "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif",
-  serif: "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif",
-  mono: "var(--font-jetbrains-mono), ui-monospace, 'SFMono-Regular', Menlo, monospace",
+  mono: "var(--font-ibm-plex-mono), ui-monospace, 'SFMono-Regular', Menlo, monospace",
 } as const;
 
+/**
+ * Os tamanhos de título são fluidos: `clamp()` no lugar de breakpoint, para
+ * que a mesma tela sirva do telefone ao monitor. O corpo permanece fixo —
+ * texto que o usuário lê e edita não deve mudar de tamanho com a janela.
+ */
 export const fontSizes = {
   xs: "0.75rem",
   sm: "0.8125rem",
   base: "0.9375rem",
   md: "1rem",
   lg: "1.25rem",
-  xl: "1.75rem",
-  "2xl": "2.25rem",
+  title: "clamp(1.35rem, 3.5vw, 1.9rem)",
+  display: "clamp(1.9rem, 6vw, 2.9rem)",
 } as const;
 
 export const lineHeights = {
-  tight: "1.2",
+  tight: "1.08",
   snug: "1.35",
-  normal: "1.6",
+  normal: "1.65",
   relaxed: "1.75",
+} as const;
+
+/**
+ * Tracking. `label` é o do rótulo em caixa alta — chips, títulos de grupo,
+ * metadados. `tight` é o do título, que em mono precisa fechar para não
+ * parecer espaçado demais.
+ */
+export const tracking = {
+  tight: "-0.02em",
+  label: "0.12em",
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -251,14 +273,32 @@ export const spacing = {
   "2xl": "4rem",
 } as const;
 
-export const radii = {
-  sm: "0.5rem",
-  md: "0.625rem",
-  lg: "0.875rem",
-} as const;
+/**
+ * Raio único. Não há escala de arredondamento: chip, botão, painel e campo
+ * usam o mesmo valor, e `globals.css` colapsa todos os nomes de raio do
+ * Tailwind neste token para que uma escala não volte por engano.
+ */
+export const radius = "6px";
 
-/** Largura máxima do conteúdo, conforme a especificação de layout. */
+/**
+ * Largura máxima do conteúdo, conforme a especificação de layout.
+ *
+ * A largura da sidebar e as duas goteiras são token, e não número solto em
+ * classe, porque a topbar depende delas: é assim que o primeiro item dela cai
+ * na coluna da sidebar e o último na borda direita do conteúdo. Se cada lado
+ * escrevesse o próprio valor, o alinhamento sairia do lugar na primeira
+ * mudança de um deles.
+ *
+ * `headerHeight` não dita a altura da topbar — ela é medida pelo conteúdo,
+ * como no erikyryan.dev.br: 0.5rem de padding em cima e embaixo em volta de um
+ * chip de 1.8625rem. O token repete esse total para quem precisa descontá-lo
+ * da viewport (a sidebar grudada abaixo do header).
+ */
 export const layout = {
   contentMaxWidth: "1100px",
-  headerHeight: "3.25rem",
+  headerHeight: "2.875rem",
+  sidebarWidth: "16rem",
+  sidebarGutter: "0.75rem",
+  contentGutterNarrow: "1rem",
+  contentGutterWide: "2rem",
 } as const;

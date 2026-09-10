@@ -8,6 +8,7 @@ import { CopyButton } from "@/components/copy-button";
 import { cn } from "@/lib/utils";
 import { highlight, type SyntaxLanguage, type TokenKind } from "@/lib/highlight";
 import { useLanguage } from "@/lib/language";
+import { sanitizeNumeric } from "@/lib/numeric-input";
 
 /**
  * Painel de texto em fonte mono. É o mesmo componente para entrada e saída —
@@ -17,11 +18,22 @@ import { useLanguage } from "@/lib/language";
  * <pre>, em vez de <textarea>: um textarea não aceita marcação dentro, e é a
  * cor que torna a saída de um beautifier legível de relance. A seleção e o
  * copiar do navegador continuam funcionando igual.
+ *
+ * Com `numeric`, os dois painéis viram campos de uma linha que aceitam só
+ * caractere numérico. Uma área de texto multilinha para digitar "1.5" promete
+ * uma liberdade que a operação não tem.
  */
 
 /** Altura mínima menor no mobile: com os painéis empilhados, uma caixa de
  * entrada alta e vazia empurraria a resposta para fora da tela. */
-const PANEL_BOX = "min-h-32 w-full rounded-xl border bg-surface-raised p-4 font-mono text-sm leading-relaxed md:min-h-64";
+const PANEL_BOX = "min-h-32 w-full rounded-md border bg-surface-raised p-4 text-sm leading-relaxed md:min-h-64";
+
+/**
+ * O painel de valor. Uma linha, altura de campo e nada de redimensionar — a
+ * caixa acompanha o que cabe nela, que é um número.
+ */
+const NUMBER_BOX =
+  "h-12 w-full rounded-md border bg-surface-raised px-4 text-md text-text placeholder:text-text-muted read-only:text-text";
 
 const SYNTAX_CLASS: Record<TokenKind, string> = {
   key: "text-syntax-key",
@@ -44,6 +56,7 @@ export function TextPanel({
   describedById,
   invalid = false,
   syntax,
+  numeric = false,
 }: {
   label: string;
   value: string;
@@ -55,12 +68,13 @@ export function TextPanel({
   describedById?: string;
   invalid?: boolean;
   syntax?: SyntaxLanguage;
+  numeric?: boolean;
 }) {
   const { language } = useLanguage();
   const id = useId();
   const labelId = `${id}-label`;
-  const highlighted = readOnly && syntax !== undefined && value !== "";
-  const labelClass = "text-xs uppercase tracking-wide text-text-muted";
+  const highlighted = !numeric && readOnly && syntax !== undefined && value !== "";
+  const labelClass = "section-title";
 
   return (
     <section className="flex min-w-0 flex-col gap-2">
@@ -80,19 +94,20 @@ export function TextPanel({
           {readOnly ? (
             <>
               <CopyButton value={value} />
-              {downloadName ? (
+              {/* Um arquivo com um número dentro não é entrega de nada. */}
+              {downloadName && !numeric ? (
                 <DownloadButton value={value} filename={downloadName} />
               ) : null}
             </>
           ) : onClear && value !== "" ? (
             <Button
-              variant="ghost"
-              size="sm"
+              variant="chip"
+              size="chip"
               onClick={onClear}
               aria-label={language === "pt" ? "Limpar entrada" : "Clear input"}
             >
               <X aria-hidden />
-              <span className="text-xs">{language === "pt" ? "Limpar" : "Clear"}</span>
+              <span>{language === "pt" ? "Limpar" : "Clear"}</span>
             </Button>
           ) : null}
         </div>
@@ -118,6 +133,26 @@ export function TextPanel({
             </span>
           ))}
         </pre>
+      ) : numeric ? (
+        <input
+          id={id}
+          type="text"
+          inputMode="decimal"
+          value={value}
+          onChange={
+            onChange ? (event) => onChange(sanitizeNumeric(event.target.value)) : undefined
+          }
+          readOnly={readOnly}
+          placeholder={placeholder}
+          spellCheck={false}
+          autoComplete="off"
+          aria-invalid={invalid || undefined}
+          aria-describedby={describedById}
+          className={cn(
+            NUMBER_BOX,
+            invalid ? "border-danger" : "border-border-interactive",
+          )}
+        />
       ) : (
         <textarea
           id={id}
@@ -168,14 +203,14 @@ function DownloadButton({
 
   return (
     <Button
-      variant="ghost"
-      size="sm"
+      variant="chip"
+      size="chip"
       onClick={download}
       disabled={value === ""}
       aria-label={language === "pt" ? "Baixar saída" : "Download output"}
     >
       <Download aria-hidden />
-      <span className="text-xs">{language === "pt" ? "Baixar" : "Download"}</span>
+      <span>{language === "pt" ? "Baixar" : "Download"}</span>
     </Button>
   );
 }

@@ -49,7 +49,7 @@ export function PythonScriptPanel({
 
   return (
     <details className="group rounded-md border border-border bg-surface-raised px-3 py-2.5">
-      <summary className="flex cursor-pointer list-none items-center gap-1.5 text-sm text-text transition-colors hover:text-accent-text [&::-webkit-details-marker]:hidden">
+      <summary className="flex cursor-pointer list-none items-center gap-1.5 text-xs uppercase tracking-label text-text transition-colors hover:text-accent-text [&::-webkit-details-marker]:hidden">
         <ChevronRight
           aria-hidden
           className="size-3.5 transition-transform group-open:rotate-90"
@@ -69,7 +69,7 @@ export function PythonScriptPanel({
           <div
             role="group"
             aria-label={pt ? "Formato do script" : "Script format"}
-            className="inline-flex flex-wrap self-start rounded-lg border border-border-interactive p-0.5"
+            className="inline-flex flex-wrap self-start rounded-md border border-border-interactive p-0.5"
           >
             {DECOMPRESSIBLE_FORMATS.map((option) => (
               <FormatTab
@@ -86,12 +86,12 @@ export function PythonScriptPanel({
           {script.requires ? (
             <li>
               {pt ? "Instale a dependência:" : "Install the dependency:"}{" "}
-              <code className="font-mono text-text">{script.requires}</code>
+              <code className="text-text">{script.requires}</code>
             </li>
           ) : null}
           <li>
             {pt ? "Salve o script como" : "Save the script as"}{" "}
-            <code className="font-mono text-text">{script.filename}</code>
+            <code className="text-text">{script.filename}</code>
             {script.minPython
               ? pt
                 ? ` — precisa do Python ${script.minPython} ou mais novo.`
@@ -100,19 +100,19 @@ export function PythonScriptPanel({
           </li>
           <li>
             {pt ? "Rode:" : "Run it:"}{" "}
-            <code className="font-mono text-text">{script.usage}</code>
+            <code className="text-text">{script.usage}</code>
           </li>
         </ol>
 
         <div className="overflow-hidden rounded-md border border-border">
           <div className="flex items-center justify-between gap-3 border-b border-border bg-surface px-3 py-1.5">
-            <span className="font-mono text-xs text-text-muted">{script.filename}</span>
+            <span className="text-xs text-text-muted">{script.filename}</span>
             <CopyButton
               value={script.code}
               label={{ pt: "script Python", en: "Python script" }}
             />
           </div>
-          <pre className="max-h-96 overflow-auto bg-surface px-3 py-3 font-mono text-xs leading-relaxed text-text">
+          <pre className="max-h-96 overflow-auto bg-surface px-3 py-3 text-xs leading-relaxed text-text">
             <code>{script.code}</code>
           </pre>
         </div>

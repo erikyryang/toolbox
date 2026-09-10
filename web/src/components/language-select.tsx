@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/lib/language";
 
 export function LanguageToggle() {
@@ -8,14 +9,16 @@ export function LanguageToggle() {
   const label = language === "pt" ? "Mudar para inglês" : "Switch to Portuguese";
 
   return (
-    <button
+    <Button
       type="button"
+      variant="chip"
+      size="chip"
       onClick={() => setLanguage(next)}
       aria-label={label}
       title={label}
-      className="flex size-8 items-center justify-center rounded-md text-xs font-semibold text-text-muted transition-colors hover:bg-surface-raised hover:text-text"
     >
-      {language.toUpperCase()}
-    </button>
+      {/* Como no site: o chip mostra o idioma de destino, não o atual. */}
+      {next.toUpperCase()}
+    </Button>
   );
 }

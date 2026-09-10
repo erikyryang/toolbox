@@ -1,7 +1,6 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { Moon, Sun } from "lucide-react";
 
 import {
   applyTheme,
@@ -9,6 +8,7 @@ import {
   storeTheme,
   type Theme,
 } from "@/lib/theme";
+import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/lib/language";
 
 /**
@@ -61,18 +61,20 @@ export function ThemeToggle() {
     : (language === "pt" ? "Usar tema escuro" : "Use dark theme");
 
   return (
-    <button
+    <Button
       type="button"
+      variant="chip"
+      size="chip"
       onClick={toggle}
       aria-label={label}
       title={label}
-      className="flex size-8 items-center justify-center rounded-md text-text-muted transition-colors hover:bg-surface-raised hover:text-text"
     >
-      {theme === "dark" ? (
-        <Sun aria-hidden className="size-4" />
-      ) : (
-        <Moon aria-hidden className="size-4" />
-      )}
-    </button>
+      {/*
+        O mesmo glifo do erikyryan.dev.br. Ele não muda com o tema: quem lê a
+        tela recebe o estado pelo rótulo, e quem vê a tela já sabe qual tema
+        está aplicado — o botão diz apenas onde se troca.
+      */}
+      <span aria-hidden>◐</span>
+    </Button>
   );
 }

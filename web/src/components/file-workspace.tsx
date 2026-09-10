@@ -6,6 +6,7 @@ import { Download, Loader2, Upload, X } from "lucide-react";
 import { AdvancedOptions } from "@/components/advanced-options";
 import { PrivacyNote } from "@/components/privacy-note";
 import { PythonScriptPanel } from "@/components/python-script";
+import { OperationHeading } from "@/components/operation-heading";
 import { Button } from "@/components/ui/button";
 import {
   backendAvailable,
@@ -334,24 +335,23 @@ export function FileWorkspace({
 
   return (
     <main className="mx-auto w-full max-w-[var(--content-max-width)] px-4 py-10 sm:px-6 sm:py-14">
-      <header className="flex flex-col gap-2">
-        <h1 className="text-3xl font-semibold tracking-tight text-text">
-          {operation.title}
-        </h1>
-        <p className="max-w-2xl text-sm text-text-muted">{operation.subtitle}</p>
-      </header>
+      <OperationHeading
+        slug={operation.slug}
+        title={operation.title}
+        subtitle={operation.subtitle}
+      />
 
       <div className="mt-10 flex flex-col gap-6">
         {compressing ? (
           <section className="flex flex-col gap-2">
-            <h2 className="text-xs uppercase tracking-wide text-text-muted">
+            <h2 className="section-title">
               {language === "pt" ? "Formato" : "Format"}
             </h2>
             <div className="flex flex-wrap items-center gap-3">
               <div
                 role="group"
                 aria-label={language === "pt" ? "Formato de saída" : "Output format"}
-                className="inline-flex flex-wrap rounded-lg border border-border-interactive p-0.5"
+                className="inline-flex flex-wrap rounded-md border border-border-interactive p-0.5"
               >
                 {COMPRESSIBLE_FORMATS.map((option) => {
                   const current = option === format;
@@ -389,14 +389,14 @@ export function FileWorkspace({
 
         {!compressing ? (
           <section className="flex flex-col gap-2">
-            <h2 className="text-xs uppercase tracking-wide text-text-muted">
+            <h2 className="section-title">
               {language === "pt" ? "Origem" : "Source"}
             </h2>
             <div className="flex flex-wrap items-center gap-3">
               <div
                 role="group"
                 aria-label={language === "pt" ? "Origem do arquivo" : "Where the archive comes from"}
-                className="inline-flex rounded-lg border border-border-interactive p-0.5"
+                className="inline-flex rounded-md border border-border-interactive p-0.5"
               >
                 {(["file", "text"] as Source[]).map((option) => {
                   const current = option === source;
@@ -433,7 +433,7 @@ export function FileWorkspace({
 
         {source === "text" && !compressing ? (
           <section className="flex flex-col gap-3">
-            <label htmlFor={pasteId} className="text-xs uppercase tracking-wide text-text-muted">
+            <label htmlFor={pasteId} className="section-title">
               {language === "pt" ? "Conteúdo codificado" : "Encoded contents"}
             </label>
             <textarea
@@ -446,7 +446,7 @@ export function FileWorkspace({
               autoCapitalize="off"
               placeholder="UEsDBAoAAAAAAA..."
               aria-describedby={error ? errorId : undefined}
-              className="min-h-32 w-full resize-y rounded-xl border border-border-interactive bg-surface-raised p-4 font-mono text-sm leading-relaxed text-text placeholder:text-text-muted md:min-h-40"
+              className="min-h-32 w-full resize-y rounded-md border border-border-interactive bg-surface-raised p-4 text-sm leading-relaxed text-text placeholder:text-text-muted md:min-h-40"
             />
             <div className="flex flex-wrap items-center gap-3">
               <Button
@@ -480,7 +480,7 @@ export function FileWorkspace({
             }}
             onDrop={onDrop}
             className={cn(
-              "flex cursor-pointer flex-col items-center gap-2 rounded-xl border border-dashed bg-surface-raised px-4 py-10 text-center transition-colors hover:border-accent hover:bg-surface",
+              "flex cursor-pointer flex-col items-center gap-2 rounded-md border border-dashed bg-surface-raised px-4 py-10 text-center transition-colors hover:border-accent hover:bg-surface",
               dragging ? "border-accent bg-surface" : "border-border-interactive",
             )}
           >
@@ -516,11 +516,11 @@ export function FileWorkspace({
           />
 
           {files.length > 0 ? (
-            <ul className="flex flex-col gap-1 font-mono text-sm">
+            <ul className="flex flex-col gap-1 text-sm">
               {files.map((file) => (
-                <li key={file.name} className="flex justify-between gap-4 text-text">
+                <li key={file.name} className="bullet-arrow flex justify-between gap-4 text-text">
                   <span className="truncate">{file.name}</span>
-                  <span className="shrink-0 text-text-muted">{formatBytes(file.size)}</span>
+                  <span className="tabular shrink-0 text-text-muted">{formatBytes(file.size)}</span>
                 </li>
               ))}
             </ul>
@@ -559,7 +559,7 @@ export function FileWorkspace({
 
         {archive ? (
           <section className="flex flex-col gap-3">
-            <h2 className="text-xs uppercase tracking-wide text-text-muted">
+            <h2 className="section-title">
               {language === "pt" ? "Conteúdo" : "Contents"} ({FORMATS[archive.format].label})
             </h2>
 
@@ -569,10 +569,10 @@ export function FileWorkspace({
                   key={entry.name}
                   className="flex flex-wrap items-center justify-between gap-3 bg-surface px-3 py-2"
                 >
-                  <span className="min-w-0 flex-1 truncate font-mono text-sm text-text">
+                  <span className="min-w-0 flex-1 truncate text-sm text-text">
                     {entry.name}
                   </span>
-                  <span className="shrink-0 font-mono text-xs text-text-muted">
+                  <span className="tabular shrink-0 text-xs text-text-muted">
                     {formatBytes(entry.size)}
                     {entry.compressedSize !== undefined
                       ? language === "pt" ? ` · comprimido ${formatBytes(entry.compressedSize)}` : ` · compressed ${formatBytes(entry.compressedSize)}`
@@ -602,7 +602,7 @@ export function FileWorkspace({
               <Download aria-hidden />
               <span>{language === "pt" ? "Baixar" : "Download"} {result.name}</span>
             </Button>
-            <p className="font-mono text-xs text-text-muted">
+            <p className="tabular text-xs text-text-muted">
               {formatBytes(result.bytes.length)}
               {mode === "compress" && totalSize > 0
                 ? language === "pt" ? ` · ${Math.round((result.bytes.length / totalSize) * 100)}% do original` : ` · ${Math.round((result.bytes.length / totalSize) * 100)}% of original`
