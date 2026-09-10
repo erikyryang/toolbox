@@ -79,7 +79,7 @@ const SEPARATOR_OPTION: OptionSpec = {
   id: "separator",
   label: "Separador",
   help: "Entra entre as linhas, nunca antes da primeira nem depois da última.",
-  default: "comma-space",
+  default: "none",
   choices: [
     { value: "none", label: "Nada" },
     { value: "space", label: "Espaço" },
@@ -95,8 +95,8 @@ const TRIM_OPTION: OptionSpec = {
   kind: "boolean",
   id: "trim",
   label: "Aparar espaços",
-  help: "Desligado, os espaços das pontas de cada linha entram na saída.",
-  default: true,
+  help: "Ligado, os espaços das pontas de cada linha ficam de fora.",
+  default: false,
 };
 
 const DROP_EMPTY_OPTION: OptionSpec = {
@@ -104,7 +104,7 @@ const DROP_EMPTY_OPTION: OptionSpec = {
   id: "dropEmpty",
   label: "Descartar linhas vazias",
   help: "Desligado, cada linha vazia vira um separador na saída.",
-  default: true,
+  default: false,
 };
 
 /**
@@ -139,6 +139,9 @@ const joinLinesOperation: OperationMeta = {
 
 export const formatterOperations: OperationMeta[] = [
   beautifier("json"),
-  joinLinesOperation,
   beautifier("xml"),
+  // Por último, e não em ordem alfabética: os dois formatadores são o que a
+  // maioria vem buscar aqui, e a junção de linhas é a vizinha de outra
+  // natureza — texto sem gramática.
+  joinLinesOperation,
 ];

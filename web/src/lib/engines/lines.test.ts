@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
+import { operationMetaBySlug } from "../operations/catalog.ts";
+import { defaultOptionValues } from "../operations/types.ts";
 import { SEPARATORS, joinLines } from "./lines.ts";
 
-/** Os padrões do catálogo: vírgula + espaço, aparo e descarte ligados. */
+/**
+ * Os testes fixam as opções que exercitam: o padrão do catálogo é não mexer em
+ * nada (separador vazio, sem aparo, sem descarte), e cada caso abaixo diz o
+ * que liga.
+ */
 const defaults = { separator: "comma-space", trim: true, dropEmpty: true };
 
 const join = (input: string, options: Record<string, string | boolean> = {}) =>
@@ -91,6 +97,25 @@ describe("juntar linhas", () => {
   });
 
   it("cai no separador padrão quando o valor é desconhecido", () => {
-    expect(join("a\nb", { separator: "inexistente" })).toBe("a, b");
+    // O padrão do catálogo é "nada": um valor perdido não inventa pontuação.
+    expect(join("a\nb", { separator: "inexistente" })).toBe("ab");
+  });
+});
+
+describe("padrões da tela", () => {
+  const meta = operationMetaBySlug("juntar-linhas")!;
+  const values = defaultOptionValues(meta);
+
+  it("não mexe em nada além de tirar as quebras", () => {
+    expect(values).toEqual({ separator: "none", trim: false, dropEmpty: false });
+    // O que entra volta igual, menos as quebras: nenhuma pontuação inventada,
+    // nenhum espaço aparado, nenhuma linha sumida sem a pessoa pedir.
+    expect(joinLines("  a  \n\nb\n", values)).toBe("  a  b");
+  });
+
+  it("cada opção ligada faz uma coisa só", () => {
+    expect(joinLines("  a  \n\nb\n", { ...values, trim: true })).toBe("ab");
+    expect(joinLines("  a  \n\nb\n", { ...values, dropEmpty: true })).toBe("  a  b");
+    expect(joinLines("  a  \n\nb\n", { ...values, separator: "comma" })).toBe("  a  ,,b,");
   });
 });

@@ -20,7 +20,7 @@ export const SEPARATORS: Record<string, string> = {
   tab: "\t",
 };
 
-export const DEFAULT_SEPARATOR = "comma-space";
+export const DEFAULT_SEPARATOR = "none";
 
 /**
  * Nenhuma entrada é inválida: texto livre não tem gramática para violar. O
