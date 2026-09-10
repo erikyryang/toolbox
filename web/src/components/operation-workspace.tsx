@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useId, useMemo, useState } from "react";
-import { ArrowLeftRight, ArrowRight, Clock } from "lucide-react";
+import { ArrowRight, Clock } from "lucide-react";
 
 import { AdvancedOptions } from "@/components/advanced-options";
 import { PrivacyNote } from "@/components/privacy-note";
@@ -17,6 +17,7 @@ import {
   type OptionValue,
 } from "@/lib/operations/types";
 import { useDebounced } from "@/lib/use-debounced";
+import { cn } from "@/lib/utils";
 import { localizeOperation, useLanguage } from "@/lib/language";
 
 /**
@@ -72,11 +73,19 @@ function Workspace({ operation }: { operation: Operation }) {
     }
   }
 
-  function invert() {
-    // Inverter troca o sentido e promove a saída a entrada, para que a próxima
-    // conversão continue de onde a anterior parou.
-    setDirection(direction === "forward" ? "reverse" : "forward");
-    setInput(output);
+  /**
+   * Trocar de sentido promove a saída a entrada, para que a próxima conversão
+   * continue de onde a anterior parou.
+   *
+   * A saída é recalculada aqui a partir do input corrente, e não lida de
+   * `outcome`: aquele valor deriva do input *debounced*, e quem digita e troca
+   * de sentido no mesmo instante levaria o resultado anterior consigo.
+   */
+  function switchTo(next: Direction) {
+    if (next === direction) return;
+    const fresh = runOperation(operation, direction, input, options);
+    setDirection(next);
+    setInput(fresh.ok ? fresh.output : "");
   }
 
   return (
@@ -91,19 +100,37 @@ function Workspace({ operation }: { operation: Operation }) {
       <div className="mt-10 flex flex-col gap-3">
         {localized.reverse ? (
           <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={invert}
-              aria-label={`Inverter para ${
-                direction === "forward"
-                  ? localized.reverse.label
-                  : localized.forward.label
-              }`}
+            {/*
+              Os dois sentidos ficam visíveis ao mesmo tempo. Antes havia um
+              único botão com o rótulo do sentido *atual*, que ao ser clicado
+              levava ao oposto — quem lia "Codificar" esperava codificar.
+            */}
+            <div
+              role="group"
+              aria-label={language === "pt" ? "Sentido da conversão" : "Conversion direction"}
+              className="inline-flex rounded-lg border border-border-interactive p-0.5"
             >
-              <ArrowLeftRight aria-hidden />
-              <span>{active.label}</span>
-            </Button>
+              {(["forward", "reverse"] as Direction[]).map((option) => {
+                const meta = directionOf(localized, option);
+                const current = option === direction;
+                return (
+                  <button
+                    key={option}
+                    type="button"
+                    aria-pressed={current}
+                    onClick={() => switchTo(option)}
+                    className={cn(
+                      "rounded-md px-3 py-1 text-sm transition-colors",
+                      current
+                        ? "bg-accent-solid font-medium text-accent-foreground"
+                        : "text-text-muted hover:text-text",
+                    )}
+                  >
+                    {meta.label}
+                  </button>
+                );
+              })}
+            </div>
             <p className="text-xs text-text-muted">
               <span className="inline-flex items-center gap-1">
                 {active.inputLabel} <ArrowRight aria-hidden className="size-3" /> {active.outputLabel}
@@ -130,6 +157,7 @@ function Workspace({ operation }: { operation: Operation }) {
               label={active.inputLabel}
               value={input}
               onChange={setInput}
+              onClear={() => setInput("")}
               placeholder={localized.placeholder}
               invalid={!outcome.ok}
               describedById={outcome.ok ? undefined : errorId}
