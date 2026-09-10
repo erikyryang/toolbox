@@ -93,6 +93,14 @@ const englishOperations: Partial<Record<string, Partial<OperationMeta>>> = {
     forward: { label: "Encode", inputLabel: "Text", outputLabel: "Base58" },
     reverse: { label: "Decode", inputLabel: "Base58", outputLabel: "Text" },
   },
+  "juntar-linhas": {
+    name: "Join lines",
+    title: "Join lines",
+    subtitle: "Join every line into a single one, with the separator the next tool expects.",
+    description:
+      "Join several lines of text into a single line, with separator choice, whitespace trimming, and empty-line removal, processed in your browser.",
+    forward: { label: "Join", inputLabel: "Text", outputLabel: "Single line" },
+  },
   "json-format": { title: "JSON: beautify and minify" },
   "xml-format": { title: "XML: beautify and minify" },
   compactar: {
@@ -118,6 +126,9 @@ const optionTranslations: Record<string, string> = {
   "Ordenar chaves": "Sort keys", "Alfabeto": "Alphabet",
   "Padrão (RFC 4648 §4)": "Standard (RFC 4648 §4)", "Preenchimento com =": "Padding with =",
   "Nível de compressão": "Compression level",
+  "Separador": "Separator", "Nada": "None", "Espaço": "Space", "Vírgula": "Comma",
+  "Vírgula + espaço": "Comma + space", "Ponto e vírgula": "Semicolon", "Barra vertical": "Pipe",
+  "Aparar espaços": "Trim whitespace", "Descartar linhas vazias": "Drop empty lines",
   "Nível exato": "Exact level", "Rápido": "Fast", "Equilibrado": "Balanced", "Máximo": "Maximum", "Customizado": "Custom",
 };
 
@@ -126,6 +137,12 @@ const helpTranslations: Record<string, string> = {
   "O alfabeto URL-safe troca + e / por - e _.": "The URL-safe alphabet replaces + and / with - and _.",
   "Desligado, a saída não recebe os caracteres = do fim.": "When off, output does not include trailing = characters.",
   "Vale apenas com o preset Customizado.": "Only applies with the Custom preset.",
+  "Entra entre as linhas, nunca antes da primeira nem depois da última.":
+    "Goes between lines, never before the first or after the last.",
+  "Desligado, os espaços das pontas de cada linha entram na saída.":
+    "When off, the whitespace around each line ends up in the output.",
+  "Desligado, cada linha vazia vira um separador na saída.":
+    "When off, each empty line becomes a separator in the output.",
 };
 
 function localizeOption(option: OptionSpec, language: Language): OptionSpec {
@@ -177,6 +194,29 @@ export function localizeOperation(operation: OperationMeta, language: Language):
     reverse: direction(reverse),
     options: operation.options.map((option) => localizeOption(option, language)),
   };
+}
+
+/**
+ * Casamento da busca da home. Os aliases entram junto porque quem procura
+ * digita "unzip" ou "b64", quase nunca o nome que a ferramenta usa — e vive
+ * aqui, e não no componente, para que o vínculo entre alias e busca possa ser
+ * testado sem renderizar nada.
+ */
+export function matchesQuery(
+  operation: OperationMeta,
+  normalizedQuery: string,
+  language: Language,
+): boolean {
+  const localized = localizeOperation(operation, language);
+  return [localized.name, localized.title, localized.subtitle, ...(operation.aliases ?? [])]
+    .join(" ")
+    .toLocaleLowerCase(localeOf(language))
+    .includes(normalizedQuery);
+}
+
+/** A tag de idioma usada nas comparações sensíveis a locale. */
+export function localeOf(language: Language): string {
+  return language === "pt" ? "pt-BR" : "en";
 }
 
 export const languageBootScript = `(function(){try{var l=localStorage.getItem(${JSON.stringify(LANGUAGE_STORAGE_KEY)});document.documentElement.lang=l==="en"?"en":"pt-BR";}catch(e){document.documentElement.lang="pt-BR";}})();`;

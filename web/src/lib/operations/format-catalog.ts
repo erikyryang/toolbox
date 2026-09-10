@@ -1,9 +1,12 @@
 import type { OperationMeta, OptionSpec } from "./types.ts";
 
 /**
- * Entradas de catálogo dos formatadores de JSON e XML.
+ * Entradas de catálogo do grupo Formato.
  *
- * Uma rota por formato, reversível: beautify em um sentido, minify no outro.
+ * Os formatadores de JSON e XML são uma rota por formato, reversível: beautify
+ * em um sentido, minify no outro. A junção de linhas não é nem uma coisa nem
+ * outra — opera sobre texto sem gramática e só tem um sentido —, então é
+ * escrita à mão, e não pela fábrica.
  */
 
 export type FormatId = "json" | "xml";
@@ -61,7 +64,71 @@ function beautifier(format: FormatId): OperationMeta {
   };
 }
 
+const SEPARATOR_OPTION: OptionSpec = {
+  kind: "select",
+  id: "separator",
+  label: "Separador",
+  help: "Entra entre as linhas, nunca antes da primeira nem depois da última.",
+  default: "comma-space",
+  choices: [
+    { value: "none", label: "Nada" },
+    { value: "space", label: "Espaço" },
+    { value: "comma", label: "Vírgula" },
+    { value: "comma-space", label: "Vírgula + espaço" },
+    { value: "semicolon", label: "Ponto e vírgula" },
+    { value: "pipe", label: "Barra vertical" },
+    { value: "tab", label: "Tabulação" },
+  ],
+};
+
+const TRIM_OPTION: OptionSpec = {
+  kind: "boolean",
+  id: "trim",
+  label: "Aparar espaços",
+  help: "Desligado, os espaços das pontas de cada linha entram na saída.",
+  default: true,
+};
+
+const DROP_EMPTY_OPTION: OptionSpec = {
+  kind: "boolean",
+  id: "dropEmpty",
+  label: "Descartar linhas vazias",
+  help: "Desligado, cada linha vazia vira um separador na saída.",
+  default: true,
+};
+
+/**
+ * Junção de linhas. Sem `reverse`: quebrar uma linha em várias é outra
+ * operação, não o inverso desta — o separador que junta nem sempre é o que
+ * separa de volta.
+ */
+const joinLinesOperation: OperationMeta = {
+  slug: "juntar-linhas",
+  name: "Juntar linhas",
+  title: "Juntar linhas",
+  subtitle:
+    "Junta todas as linhas em uma só, com o separador que a próxima ferramenta espera.",
+  description:
+    "Junta várias linhas de texto em uma linha única, com escolha de separador, aparo de espaços e descarte de linhas vazias, processado no seu navegador.",
+  group: "Formato",
+  execution: "client",
+  placeholder: "1042\n1043\n\n1044  \n1045",
+  aliases: [
+    "join",
+    "join lines",
+    "juntar",
+    "juntar linhas",
+    "unir linhas",
+    "uma linha",
+    "one line",
+    "remover quebras",
+  ],
+  forward: { label: "Juntar", inputLabel: "Texto", outputLabel: "Linha única" },
+  options: [SEPARATOR_OPTION, TRIM_OPTION, DROP_EMPTY_OPTION],
+};
+
 export const formatterOperations: OperationMeta[] = [
   beautifier("json"),
+  joinLinesOperation,
   beautifier("xml"),
 ];

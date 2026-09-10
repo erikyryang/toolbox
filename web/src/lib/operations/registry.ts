@@ -1,5 +1,6 @@
 import { decodeBase32, decodeBase58, encodeBase32, encodeBase58 } from "../engines/base32-58.ts";
 import { decodeBase64, encodeBase64 } from "../engines/base64.ts";
+import { joinLines } from "../engines/lines.ts";
 import { formatter } from "../engines/structured.ts";
 import { operationMetaBySlug } from "./catalog.ts";
 import type { Engine, Operation } from "./types.ts";
@@ -15,6 +16,9 @@ const engines: Record<string, { forward: Engine; reverse?: Engine }> = {
 
   "json-format": { forward: formatter("json", false), reverse: formatter("json", true) },
   "xml-format": { forward: formatter("xml", false), reverse: formatter("xml", true) },
+
+  // Sentido único: o inverso seria outra operação, não a volta desta.
+  "juntar-linhas": { forward: joinLines },
 };
 
 export function getOperation(slug: string): Operation | undefined {

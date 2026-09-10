@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ArrowUpRight, Archive, Braces, Code2, Search } from "lucide-react";
 
 import type { OperationGroup, OperationMeta } from "@/lib/operations/types";
-import { groupName, localizeOperation, useLanguage } from "@/lib/language";
+import { groupName, localeOf, localizeOperation, matchesQuery, useLanguage } from "@/lib/language";
 import { QUICK_START_SLUGS } from "@/lib/operations/catalog";
 
 const groupIcon = { Codificação: Code2, Formato: Braces, Compactação: Archive };
@@ -17,25 +17,16 @@ export function OverviewPanel({
 }) {
   const { language } = useLanguage();
   const [query, setQuery] = useState("");
-  const normalized = query.trim().toLocaleLowerCase(language === "pt" ? "pt-BR" : "en");
+  const normalized = query.trim().toLocaleLowerCase(localeOf(language));
   const quickActions = groups
     .flatMap(({ items }) => items)
     .filter((operation) => QUICK_START_SLUGS.includes(operation.slug));
-  const locale = language === "pt" ? "pt-BR" : "en";
   const matches = useMemo(
     () => groups.map(({ group, items }) => ({
       group,
-      items: items.filter((operation) => {
-        const localized = localizeOperation(operation, language);
-        // Os aliases entram na busca porque quem procura digita "unzip" ou
-        // "b64", quase nunca o nome que a ferramenta usa.
-        return [localized.name, localized.title, localized.subtitle, ...(operation.aliases ?? [])]
-          .join(" ")
-          .toLocaleLowerCase(locale)
-          .includes(normalized);
-      }),
+      items: items.filter((operation) => matchesQuery(operation, normalized, language)),
     })).filter(({ items }) => items.length > 0),
-    [groups, language, locale, normalized],
+    [groups, language, normalized],
   );
 
   return (
