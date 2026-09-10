@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
-import { Check, Copy, Download, X } from "lucide-react";
+import { useId } from "react";
+import { Download, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { CopyButton } from "@/components/copy-button";
 import { cn } from "@/lib/utils";
 import { highlight, type SyntaxLanguage, type TokenKind } from "@/lib/highlight";
 import { useLanguage } from "@/lib/language";
@@ -138,39 +139,6 @@ export function TextPanel({
         />
       )}
     </section>
-  );
-}
-
-function CopyButton({ value }: { value: string }) {
-  const { language } = useLanguage();
-  const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    if (!copied) return;
-    const timer = setTimeout(() => setCopied(false), 1600);
-    return () => clearTimeout(timer);
-  }, [copied]);
-
-  async function copy() {
-    try {
-      await navigator.clipboard.writeText(value);
-      setCopied(true);
-    } catch {
-      setCopied(false);
-    }
-  }
-
-  return (
-    <Button
-      variant="ghost"
-      size="sm"
-      onClick={copy}
-      disabled={value === ""}
-      aria-label={copied ? (language === "pt" ? "Copiado" : "Copied") : (language === "pt" ? "Copiar saída" : "Copy output")}
-    >
-      {copied ? <Check aria-hidden /> : <Copy aria-hidden />}
-      <span className="text-xs">{copied ? (language === "pt" ? "Copiado" : "Copied") : (language === "pt" ? "Copiar" : "Copy")}</span>
-    </Button>
   );
 }
 
