@@ -15,9 +15,8 @@ ferramenta que obriga a escolher a base em vez de escondê-la.
 - **Novo grupo `Unidades`** na navegação, ao lado de Codificação, Formato e
   Compactação. É a quarta seção do menu, e nasce com uma operação.
 
-- **Nova operação `tamanho-de-dados`**, rota própria e indexável, no formato
-  de duas colunas que toda operação de texto já usa: valor na entrada,
-  resultado na saída, recalculado a cada tecla.
+- **Nova operação `converter-tamanho`**, rota própria e indexável, em duas
+  colunas: valor na entrada, resultado na saída, recalculado a cada tecla.
 
 - **Seis unidades**: bit, byte, KB, MB, GB e TB. KB entra porque é o degrau
   que falta entre byte e MB — uma escada com buraco no meio não é uma escada.
@@ -30,12 +29,13 @@ ferramenta que obriga a escolher a base em vez de escondê-la.
   invertível pelo controle que as operações reversíveis já têm — converter de
   volta é promover a saída a entrada e trocar as duas pontas.
 
-- **Sufixo na entrada vence a seleção**: quem digita `1.5 GB` não precisa
-  ajustar o seletor de origem. É como se lê um valor no mundo real — colado de
-  um relatório, com a unidade junto.
+- **Campo estritamente numérico**, e não área de texto: uma linha, aceitando
+  dígitos, um separador decimal e um sinal. Letra é recusada na digitação, não
+  depois por mensagem de erro. A saída é um campo igual, somente leitura.
 
-- **Uma linha por valor**: a entrada aceita várias linhas e converte cada uma,
-  para quem chega com uma coluna de planilha em vez de um número solto.
+  A entrada de um conversor é um valor, não um texto. Uma área de texto
+  multilinha para digitar `1.5` promete uma liberdade que a operação não tem —
+  e a unidade vem dos seletores, que é onde ela pode ser lida sem ambiguidade.
 
 - **Opções principais fora do disclosure.** Encontrado ao montar a tela: os
   três seletores — base, origem e destino — caíam atrás de "Opções avançadas",
@@ -58,18 +58,22 @@ ferramenta que obriga a escolher a base em vez de escondê-la.
 
 ### Modified Capabilities
 
-- `operation-workspace`: ganha o conceito de opção principal, exibida fora do
-  disclosure. Nenhum requisito existente muda — o de opções avançadas continua
-  valendo para tudo que não for declarado principal.
+- `operation-workspace`: ganha dois conceitos — opção principal, exibida fora
+  do disclosure, e painel de valor numérico, para operações cuja entrada é um
+  número. Nenhum requisito existente muda: o de opções avançadas continua
+  valendo para tudo que não for declarado principal, e o de dois painéis
+  continua valendo para toda operação de texto.
 
 ## Impact
 
-- **Novo código**: `web/src/lib/engines/data-size.ts` e seu teste,
+- **Novo código**: `web/src/lib/engines/data-size.ts`,
+  `web/src/lib/numeric-input.ts` e os testes dos dois,
   `web/src/lib/operations/units-catalog.ts`.
 - **Código tocado**: `types.ts` (o tipo `OperationGroup` ganha `Unidades`, e
-  `OperationMeta` ganha `primaryOptionIds`), `operation-workspace.tsx` e
-  `advanced-options.tsx` (a separação entre principal e avançada, com o campo
-  de opção extraído para módulo próprio),
+  `OperationMeta` ganha `primaryOptionIds` e `valueKind`),
+  `operation-workspace.tsx` e `advanced-options.tsx` (a separação entre
+  principal e avançada, com o campo de opção extraído para módulo próprio),
+  `text-panel.tsx` (a variante de campo numérico),
   `catalog.ts` (`GROUP_ORDER` e a lista de operações), `registry.ts` (os dois
   sentidos do motor) e `i18n.ts` (nome do grupo, tradução da operação e das
   opções — toda operação nova precisa dos dois idiomas).

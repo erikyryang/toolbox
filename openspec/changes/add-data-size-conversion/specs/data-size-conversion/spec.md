@@ -22,6 +22,34 @@ elevada à posição do degrau.
 - **WHEN** o usuário converte `1.5` de GB para MB na base 1000
 - **THEN** a saída é `1500`
 
+### Requirement: Campo de valor estritamente numérico
+A entrada SHALL ser um campo de uma única linha que aceita apenas número:
+dígitos, um separador decimal — ponto ou vírgula — e um sinal inicial.
+Qualquer outro caractere MUST ser recusado no momento da digitação, e não
+depois, por mensagem de erro.
+
+A saída SHALL ser um campo de uma única linha, somente leitura, no mesmo
+formato. Nem entrada nem saída MUST aceitar múltiplas linhas.
+
+A unidade de origem vem exclusivamente do seletor. O campo MUST NOT
+interpretar unidade escrita junto do valor, porque não há como escrevê-la.
+
+#### Scenario: Letra recusada na digitação
+- **WHEN** o usuário digita `1.5 GB` no campo de valor
+- **THEN** o campo retém `1.5` e descarta os caracteres não numéricos, sem exibir erro
+
+#### Scenario: Vírgula como separador decimal
+- **WHEN** o usuário digita `1,5`
+- **THEN** o valor é aceito e convertido como um e meio
+
+#### Scenario: Campo de uma linha
+- **WHEN** o usuário tenta inserir uma quebra de linha no campo de valor
+- **THEN** o campo permanece com uma única linha
+
+#### Scenario: Saída não editável
+- **WHEN** o usuário tenta digitar no campo de resultado
+- **THEN** o conteúdo não muda, e continua sendo o resultado da conversão
+
 ### Requirement: Base escolhida explicitamente
 A operação SHALL oferecer a base como opção de dois valores — 1000 (decimal,
 SI) e 1024 (binária, IEC) — e MUST NOT adivinhar qual usar. A base padrão é
@@ -57,39 +85,6 @@ trocam de papel.
 - **WHEN** a unidade de origem e a de destino são a mesma
 - **THEN** a saída repete o valor da entrada, sem erro
 
-### Requirement: Sufixo de unidade na entrada vence a seleção
-Quando o valor da entrada traz uma unidade escrita junto — `1.5 GB`, `900mb`,
-`64 KiB` —, essa unidade SHALL prevalecer sobre a unidade de origem
-selecionada, para aquela linha. O reconhecimento MUST ignorar diferença de
-caixa e espaço entre número e unidade, e MUST aceitar as formas IEC (`KiB`,
-`MiB`, `GiB`, `TiB`) como sinônimos do degrau correspondente.
-
-#### Scenario: Sufixo sobrepõe a seleção
-- **WHEN** a unidade de origem selecionada é MB e o usuário digita `2 GB`
-- **THEN** a conversão parte de GB, e não de MB
-
-#### Scenario: Forma IEC reconhecida
-- **WHEN** o usuário digita `64 KiB`
-- **THEN** o valor é lido como 64 no degrau KB
-
-#### Scenario: Valor sem sufixo
-- **WHEN** o usuário digita apenas `2048`
-- **THEN** a conversão parte da unidade de origem selecionada
-
-### Requirement: Uma linha por valor
-A entrada SHALL aceitar várias linhas e converter cada uma independentemente,
-produzindo uma linha de saída por linha de entrada, na mesma ordem. Linhas em
-branco SHALL ser preservadas como linhas em branco, para que a saída continue
-alinhada com a entrada.
-
-#### Scenario: Coluna de valores
-- **WHEN** o usuário cola três valores, um por linha
-- **THEN** a saída tem três linhas, cada uma com a conversão da linha correspondente
-
-#### Scenario: Linha em branco
-- **WHEN** a entrada tem uma linha em branco entre dois valores
-- **THEN** a saída tem uma linha em branco na mesma posição
-
 ### Requirement: Saída legível e reaproveitável
 A saída SHALL usar ponto como separador decimal e MUST NOT usar separador de
 milhar, para que o número possa ser colado em outra ferramenta sem limpeza.
@@ -105,20 +100,27 @@ MUST aparecer sem casas decimais.
 - **WHEN** a conversão de `0.1` GB para MB na base 1024 é calculada
 - **THEN** a saída não traz uma cauda de dígitos vinda da aritmética binária
 
-### Requirement: Entrada inválida em erro legível
-Uma linha que não seja um número reconhecível SHALL produzir erro de operação
-com mensagem legível, identificando a linha problemática. O motor MUST NOT
-lançar exceção crua nem devolver `NaN` na saída. Entrada vazia SHALL produzir
-saída vazia, sem erro.
+### Requirement: Valor incompleto não é erro
+Enquanto a entrada não for um número completo — vazia, ou apenas um sinal ou
+um separador decimal —, a saída SHALL ser vazia e nenhum erro MUST ser
+exibido. Digitar é um processo, e cada tecla intermediária não é uma falha.
 
-#### Scenario: Texto no lugar do número
-- **WHEN** o usuário digita `mais ou menos dois`
-- **THEN** a operação reporta erro legível abaixo do campo de entrada, e a saída fica vazia
+Um valor que chegue ao motor sem ser um número reconhecível SHALL produzir
+erro de operação com mensagem legível. O motor MUST NOT lançar exceção crua
+nem devolver `NaN` na saída.
 
-#### Scenario: Unidade desconhecida
-- **WHEN** o usuário digita `5 parsecs`
-- **THEN** a operação reporta erro legível informando que a unidade não é reconhecida
-
-#### Scenario: Entrada vazia
+#### Scenario: Campo vazio
 - **WHEN** o campo de entrada está vazio
 - **THEN** a saída é vazia e nenhum erro é exibido
+
+#### Scenario: Sinal sozinho
+- **WHEN** o usuário digitou apenas `-`
+- **THEN** a saída é vazia e nenhum erro é exibido
+
+#### Scenario: Separador sozinho
+- **WHEN** o usuário digitou apenas `.`
+- **THEN** a saída é vazia e nenhum erro é exibido
+
+#### Scenario: Valor irreconhecível
+- **WHEN** o motor recebe um valor que não é um número
+- **THEN** a operação reporta erro legível abaixo do campo de entrada, e a saída fica vazia

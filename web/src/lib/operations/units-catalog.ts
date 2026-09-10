@@ -17,7 +17,6 @@ const FROM_OPTION: OptionSpec = {
   kind: "select",
   id: "from",
   label: "De",
-  help: "Uma unidade escrita junto do valor — 1.5 GB — vence esta escolha.",
   default: "gb",
   choices: unitChoices(),
 };
@@ -48,16 +47,16 @@ const BASE_OPTION: OptionSpec = {
 };
 
 const dataSizeOperation: OperationMeta = {
-  slug: "tamanho-de-dados",
-  name: "Tamanho de dados",
-  title: "Tamanho de dados",
+  slug: "converter-tamanho",
+  name: "Converter tamanho",
+  title: "Converter tamanho",
   subtitle:
     "Converte entre bit, byte, KB, MB, GB e TB, com a base escolhida por você em vez de adivinhada.",
   description:
     "Conversor de unidades de tamanho de dados entre bit, byte, KB, MB, GB e TB, com escolha explícita entre base 1000 (SI) e 1024 (IEC), processado no seu navegador.",
   group: "Unidades",
   execution: "client",
-  placeholder: "1.5 GB\n512\n2 TiB",
+  placeholder: "1.5",
   aliases: [
     "bit",
     "byte",
@@ -94,6 +93,8 @@ const dataSizeOperation: OperationMeta = {
     outputLabel: "Resultado",
     help: "O caminho de volta: converte da unidade escolhida em Para para a escolhida em De.",
   },
+  // O valor é um número, não um texto: os painéis viram campos de uma linha.
+  valueKind: "number",
   options: [BASE_OPTION, FROM_OPTION, TO_OPTION],
   // As três são a operação, não um ajuste fino dela: um conversor cuja base
   // está escondida esconde a própria pergunta que ele responde.

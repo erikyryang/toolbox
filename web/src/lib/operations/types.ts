@@ -109,6 +109,12 @@ export type OperationMeta = {
    * de quase toda operação.
    */
   primaryOptionIds?: string[];
+  /**
+   * `text`: painéis multilinha, o padrão.
+   * `number`: campos de uma linha que aceitam só caractere numérico — para
+   * operações cuja entrada é um valor, e não um texto.
+   */
+  valueKind?: "text" | "number";
   /** Exemplo curto usado como placeholder do painel de entrada. */
   placeholder?: string;
   /**

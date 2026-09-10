@@ -22,7 +22,7 @@ const engines: Record<string, { forward: Engine; reverse?: Engine }> = {
   "juntar-linhas": { forward: joinLines },
 
   // O inverso é o mesmo motor com origem e destino trocados.
-  "tamanho-de-dados": { forward: convertDataSize, reverse: convertDataSizeBack },
+  "converter-tamanho": { forward: convertDataSize, reverse: convertDataSizeBack },
 };
 
 export function getOperation(slug: string): Operation | undefined {

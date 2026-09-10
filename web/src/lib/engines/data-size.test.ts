@@ -5,7 +5,7 @@ import {
   convertDataSizeBack,
   factorInBits,
   formatNumber,
-  parseLine,
+  parseValue,
 } from "./data-size.ts";
 
 /** As opções como a tela as entrega: strings, vindas dos seletores. */
@@ -81,51 +81,28 @@ describe("bit e byte", () => {
   });
 });
 
-describe("sufixo de unidade na entrada", () => {
-  it("vence a unidade de origem selecionada", () => {
-    // Origem selecionada é MB, mas a linha diz GB.
-    expect(output(convertDataSize("2 GB", options("mb", "mb", "1000")))).toBe("2000");
+describe("leitura do valor", () => {
+  it("lê o número da entrada", () => {
+    expect(parseValue("2048")).toBe(2048);
+    expect(parseValue("1.5")).toBe(1.5);
   });
 
-  it("ignora caixa e espaço entre número e unidade", () => {
-    expect(output(convertDataSize("900mb", options("bit", "mb", "1000")))).toBe("900");
-    expect(output(convertDataSize("900 MB", options("bit", "mb", "1000")))).toBe("900");
-    expect(output(convertDataSize("900Mb", options("bit", "mb", "1000")))).toBe("900");
+  it("aceita vírgula como separador decimal", () => {
+    expect(parseValue("1,5")).toBe(1.5);
   });
 
-  it("aceita as formas IEC como sinônimo do degrau", () => {
-    expect(output(convertDataSize("64 KiB", options("bit", "kb", "1024")))).toBe("64");
-    expect(output(convertDataSize("1 GiB", options("bit", "byte", "1024")))).toBe("1073741824");
+  it("ignora espaço nas pontas", () => {
+    expect(parseValue("  1024  ")).toBe(1024);
   });
 
-  it("aceita os nomes por extenso", () => {
-    expect(output(convertDataSize("2 megabytes", options("bit", "mb", "1000")))).toBe("2");
+  it("aceita sinal", () => {
+    expect(parseValue("-2")).toBe(-2);
+    expect(parseValue("+2")).toBe(2);
   });
 
-  it("sem sufixo, parte da unidade selecionada", () => {
+  it("a unidade vem do seletor, e só dele", () => {
     expect(output(convertDataSize("2048", options("mb", "gb", "1024")))).toBe("2");
-  });
-
-  it("lê número e unidade separadamente", () => {
-    expect(parseLine("1.5 GB", "mb", 1)).toEqual({ value: 1.5, unit: "gb" });
-    expect(parseLine("2048", "mb", 1)).toEqual({ value: 2048, unit: "mb" });
-  });
-});
-
-describe("várias linhas", () => {
-  it("converte uma linha por vez, na ordem", () => {
-    const result = convertDataSize("1\n2\n4", options("gb", "mb", "1000"));
-    expect(output(result)).toBe("1000\n2000\n4000");
-  });
-
-  it("preserva a linha em branco na mesma posição", () => {
-    const result = convertDataSize("1\n\n2", options("gb", "mb", "1000"));
-    expect(output(result)).toBe("1000\n\n2000");
-  });
-
-  it("cada linha pode trazer sua própria unidade", () => {
-    const result = convertDataSize("1 GB\n512 MB", options("gb", "mb", "1000"));
-    expect(output(result)).toBe("1000\n512");
+    expect(output(convertDataSize("2048", options("kb", "mb", "1024")))).toBe("2");
   });
 });
 
@@ -192,30 +169,36 @@ describe("sentido inverso", () => {
   });
 });
 
-describe("entrada inválida", () => {
-  it("texto no lugar do número é erro legível", () => {
+describe("valor incompleto e inválido", () => {
+  it("entrada vazia devolve saída vazia, sem erro", () => {
+    expect(output(convertDataSize("", options("gb", "mb", "1024")))).toBe("");
+    expect(output(convertDataSizeBack("", options("gb", "mb", "1024")))).toBe("");
+  });
+
+  it("sinal sozinho ainda não é número, e não é erro", () => {
+    expect(parseValue("-")).toBeUndefined();
+    expect(output(convertDataSize("-", options("gb", "mb", "1024")))).toBe("");
+  });
+
+  it("separador sozinho ainda não é número, e não é erro", () => {
+    expect(parseValue(".")).toBeUndefined();
+    expect(parseValue(",")).toBeUndefined();
+    expect(output(convertDataSize(".", options("gb", "mb", "1024")))).toBe("");
+  });
+
+  it("só espaço em branco devolve vazio", () => {
+    expect(output(convertDataSize("   ", options("gb", "mb", "1024")))).toBe("");
+  });
+
+  /*
+   * O campo da tela recusa letra na digitação, então estes casos não chegam
+   * pela interface. O motor é função pura e precisa se defender mesmo assim:
+   * é o que o teste do registro cobre para toda operação.
+   */
+  it("valor irreconhecível é erro legível", () => {
     expect(() => convertDataSize("mais ou menos dois", options("gb", "mb", "1024"))).toThrow(
       OperationError,
     );
-  });
-
-  it("unidade desconhecida é erro legível", () => {
-    try {
-      convertDataSize("5 parsecs", options("gb", "mb", "1024"));
-      expect.unreachable("deveria ter lançado");
-    } catch (error) {
-      expect(error).toBeInstanceOf(OperationError);
-      expect((error as OperationError).message).toContain("parsecs");
-    }
-  });
-
-  it("a mensagem identifica a linha problemática", () => {
-    try {
-      convertDataSize("1\n2\nabc", options("gb", "mb", "1024"));
-      expect.unreachable("deveria ter lançado");
-    } catch (error) {
-      expect((error as OperationError).message).toContain("linha 3");
-    }
   });
 
   it("separador de milhar não é aceito, para não virar adivinhação", () => {
@@ -224,12 +207,13 @@ describe("entrada inválida", () => {
     );
   });
 
-  it("entrada vazia devolve saída vazia, sem erro", () => {
-    expect(output(convertDataSize("", options("gb", "mb", "1024")))).toBe("");
-    expect(output(convertDataSizeBack("", options("gb", "mb", "1024")))).toBe("");
-  });
-
-  it("só espaço em branco também devolve vazio", () => {
-    expect(output(convertDataSize("   \n  ", options("gb", "mb", "1024")))).toBe("");
+  it("a mensagem diz o que era esperado", () => {
+    try {
+      convertDataSize("abc", options("gb", "mb", "1024"));
+      expect.unreachable("deveria ter lançado");
+    } catch (error) {
+      expect(error).toBeInstanceOf(OperationError);
+      expect((error as OperationError).message).toContain("1024");
+    }
   });
 });

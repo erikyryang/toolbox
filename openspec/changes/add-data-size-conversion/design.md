@@ -16,8 +16,8 @@ binária sem entregar `1023.9999999999999`.
 **Goals:**
 
 - Converter entre bit, byte, KB, MB, GB e TB com a base visível e escolhida.
-- Aceitar o valor como a pessoa o encontra no mundo — `1.5 GB`, `900mb`,
-  `64 KiB` — e não só como número nu.
+- Um campo de valor que só aceita valor: uma linha, caractere numérico, e a
+  unidade vindo dos seletores.
 - Saída colável em outra ferramenta, sem separador de milhar nem cauda de
   ponto flutuante.
 - Errar de forma legível, como todo motor do repositório.
@@ -64,17 +64,33 @@ nome IEC do degrau. `EngineResult` já admite `{ output, notes }`, e a tela já
 renderiza notas abaixo do painel — o mecanismo existe e é usado por outras
 operações para exatamente este tipo de aviso.
 
-### O sufixo da entrada vence a seleção
+### O campo é estritamente numérico, e por isso o motor ficou menor
 
-Quem cola `1.5 GB` de um relatório não quer ajustar um seletor antes. O parser
-lê `número + unidade opcional`; quando a unidade está lá, ela manda naquela
-linha. As formas IEC são aceitas como sinônimo do degrau — `KiB` é `KB` com a
-base já implícita, e como a base é escolhida à parte, tratá-las como sinônimo
-é o que evita duas fontes de verdade discordando.
+A entrada de um conversor é um valor. Uma área de texto multilinha para
+digitar `1.5` promete linhas, colagem de parágrafo e unidade escrita junto —
+liberdade que a operação não tem como honrar sem inventar regras de leitura.
 
-*Consequência aceita*: `64 KiB` com base 1000 selecionada converte como 64 KB
-decimal. A nota diz qual base foi aplicada, então o resultado não é
-silenciosamente errado — é explicitamente o que a opção pediu.
+O campo é `type="text"` com `inputMode="decimal"`, e não `type="number"`: o
+número nativo trata a vírgula decimal de forma inconsistente entre locales, e
+o produto começa em português, onde é a vírgula que se digita. O filtro é uma
+função pura, `sanitizeNumeric`, aplicada no `onChange` de um campo controlado
+— a tecla que não pode entrar simplesmente não aparece.
+
+Recusar na digitação, e não depois por mensagem, é a escolha que importa:
+quem digita uma letra num campo de valor não cometeu um engano que mereça uma
+mensagem vermelha, apenas errou a tecla.
+
+Como consequência, o motor perdeu a tabela de sinônimos de unidade e a leitura
+linha a linha: nenhuma das duas tem como ser alcançada pela interface, e
+código inalcançável é código que mente sobre o que o produto faz. A unidade
+passa a vir exclusivamente dos seletores.
+
+### Digitar é um processo, e nem toda tecla intermediária é falha
+
+`""`, `"-"`, `"."` e `"-."` não são números, mas também não são erro: são a
+metade do caminho até um. O motor devolve saída vazia para esses estados, e só
+erra com o que não pode virar número por nenhum caminho. Sem isso, a mensagem
+de erro piscaria a cada primeiro caractere de um valor negativo ou decimal.
 
 ### O sentido inverso troca origem e destino
 
@@ -100,10 +116,10 @@ lugar nenhum.
   aritmética de ponto flutuante deixa de ser exata. É ~1 PB em bits; fora da
   escada oferecida. Se PB entrar depois, esta conta precisa ser refeita.
 
-- **`KiB` com base 1000 é uma contradição que a ferramenta aceita** →
-  mitigado pela nota obrigatória na saída, que declara a base aplicada. A
-  alternativa — recusar a combinação — transformaria um mal-entendido em
-  erro, e a pessoa não teria como saber o que a ferramenta queria.
+- **Não dá mais para colar `1.5 GB` de um relatório** → é o custo do campo
+  estritamente numérico, e foi decidido assim de propósito. Quem cola um valor
+  com unidade cola o número e escolhe a unidade no seletor, que é uma
+  interação a mais em troca de um campo que não aceita lixo.
 
 - **Uma quarta seção no menu com um item só** → é o custo de a operação não
   pertencer a nenhuma das três existentes. Forçá-la em "Formato" faria o menu
@@ -113,4 +129,6 @@ lugar nenhum.
 
 Nenhuma. A leitura de `tr` como TB foi assumida a partir da escada citada
 (bit, byte, MB, GB) e declarada na entrega; KB entrou por ser o degrau que
-faltava entre byte e MB.
+faltava entre byte e MB. O nome da operação e a estritura do campo foram
+decididos pelo autor depois da primeira entrega, e os artefatos acima já
+refletem essas duas escolhas.

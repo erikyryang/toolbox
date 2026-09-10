@@ -59,6 +59,7 @@ function Workspace({ operation }: { operation: Operation }) {
   const active = directionOf(localized, direction);
   const output = outcome.ok ? outcome.output : "";
   const { primary, advanced } = splitOptions(localized);
+  const numeric = operation.valueKind === "number";
 
   const setOption = useCallback((id: string, value: OptionValue) => {
     setOptions((current) => ({ ...current, [id]: value }));
@@ -169,6 +170,7 @@ function Workspace({ operation }: { operation: Operation }) {
               placeholder={localized.placeholder}
               invalid={!outcome.ok}
               describedById={outcome.ok ? undefined : errorId}
+              numeric={numeric}
             />
 
             {outcome.ok ? null : (
@@ -185,6 +187,7 @@ function Workspace({ operation }: { operation: Operation }) {
               readOnly
               syntax={localized.syntax}
               downloadName={`${operation.slug}.txt`}
+              numeric={numeric}
             />
 
             {outcome.ok && outcome.notes.length > 0 ? (

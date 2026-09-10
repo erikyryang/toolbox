@@ -49,9 +49,9 @@ const englishOperations: Partial<Record<string, Partial<OperationMeta>>> = {
       "Join several lines of text into a single line, with separator choice, whitespace trimming, and empty-line removal, processed in your browser.",
     forward: { label: "Join", inputLabel: "Text", outputLabel: "Single line" },
   },
-  "tamanho-de-dados": {
-    name: "Data size",
-    title: "Data size",
+  "converter-tamanho": {
+    name: "Convert size",
+    title: "Convert size",
     subtitle:
       "Convert between bit, byte, KB, MB, GB, and TB, with the base you choose rather than the one a tool assumes.",
     description:
@@ -113,8 +113,6 @@ const helpTranslations: Record<string, string> = {
     "When on, the whitespace around each line is left out.",
   "Desligado, cada linha vazia vira um separador na saída.":
     "When off, each empty line becomes a separator in the output.",
-  "Uma unidade escrita junto do valor — 1.5 GB — vence esta escolha.":
-    "A unit written next to the value — 1.5 GB — overrides this choice.",
   "1024 é o que o sistema operacional reporta; 1000 é o que o fabricante imprime na caixa.":
     "1024 is what the operating system reports; 1000 is what the manufacturer prints on the box.",
 };

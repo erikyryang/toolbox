@@ -12,6 +12,10 @@ import type { Engine, EngineResult, OptionValues } from "../operations/types.ts"
  * qual foi aplicada: é a ambiguidade entre 10¹² e 2⁴⁰ que faz um disco de
  * 1 TB aparecer como 931 no sistema operacional, e esconder essa escolha
  * seria esconder justamente o que a ferramenta existe para responder.
+ *
+ * A entrada é um valor, não um texto: o campo da tela aceita só caractere
+ * numérico, e a unidade vem exclusivamente dos seletores. Por isso aqui não
+ * há leitura de sufixo nem de várias linhas — não existe como digitá-los.
  */
 
 export const DATA_UNITS = ["bit", "byte", "kb", "mb", "gb", "tb"] as const;
@@ -61,83 +65,43 @@ export function factorInBits(unit: DataUnit, base: Base): number {
   return BITS_PER_BYTE * base ** STEPS[unit];
 }
 
-/**
- * Sinônimos aceitos na entrada. As formas IEC entram como sinônimo do degrau
- * correspondente, e não como unidade própria: a base já é escolhida à parte, e
- * ter duas fontes de verdade para ela seria ter duas fontes discordando.
- */
-const UNIT_ALIASES: Record<string, DataUnit> = {
-  b: "byte",
-  bit: "bit",
-  bits: "bit",
-  byte: "byte",
-  bytes: "byte",
-  kb: "kb",
-  kib: "kb",
-  kbyte: "kb",
-  kilobyte: "kb",
-  kilobytes: "kb",
-  mb: "mb",
-  mib: "mb",
-  mbyte: "mb",
-  megabyte: "mb",
-  megabytes: "mb",
-  gb: "gb",
-  gib: "gb",
-  gbyte: "gb",
-  gigabyte: "gb",
-  gigabytes: "gb",
-  tb: "tb",
-  tib: "tb",
-  tbyte: "tb",
-  terabyte: "tb",
-  terabytes: "tb",
-};
-
 export function isDataUnit(value: string): value is DataUnit {
   return (DATA_UNITS as readonly string[]).includes(value);
 }
 
-function readUnit(raw: string, line: number): DataUnit {
-  const unit = UNIT_ALIASES[raw.toLowerCase()];
-  if (!unit) {
-    throw new OperationError(
-      `Unidade não reconhecida na linha ${line}: "${raw}". Use bit, byte, KB, MB, GB ou TB.`,
-    );
-  }
-  return unit;
-}
+/**
+ * O valor é um número, e só. A vírgula decimal é aceita porque o produto
+ * começa em português, onde é ela que se digita.
+ *
+ * Separador de milhar não é aceito: "1,024" seria ambíguo entre mil e vinte e
+ * quatro e um vírgula zero dois quatro, e adivinhar qual é pior que pedir o
+ * número limpo.
+ */
+const VALUE_PATTERN = /^[+-]?\d+(?:[.,]\d+)?$/;
 
 /**
- * Uma linha é `número [unidade]`. A unidade escrita junto vence a seleção,
- * porque quem cola "1.5 GB" de um relatório não quer ajustar um seletor
- * antes — é assim que o valor aparece no mundo.
- *
- * A vírgula decimal é aceita porque o produto começa em português, onde é ela
- * que se digita. Separador de milhar não é aceito: "1,024" seria ambíguo
- * entre mil e vinte e quatro e um vírgula zero dois quatro, e adivinhar qual
- * é pior que pedir o número limpo.
+ * Enquanto se digita, o campo passa por estados que ainda não são número —
+ * vazio, um sinal solto, um separador solto. Nenhum deles é falha: são a
+ * metade do caminho. Só o que não pode virar número por nenhum caminho é erro.
  */
-const LINE_PATTERN = /^([+-]?\d+(?:[.,]\d+)?)\s*([a-zA-Z]*)$/;
+const PARTIAL_PATTERN = /^[+-]?[.,]?$/;
 
-export function parseLine(
-  raw: string,
-  fallback: DataUnit,
-  line: number,
-): { value: number; unit: DataUnit } {
-  const match = LINE_PATTERN.exec(raw.trim());
-  if (!match) {
+export function parseValue(raw: string): number | undefined {
+  const text = raw.trim();
+  if (PARTIAL_PATTERN.test(text)) return undefined;
+
+  if (!VALUE_PATTERN.test(text)) {
     throw new OperationError(
-      `Não é um valor reconhecível na linha ${line}: "${raw.trim()}". Esperado um número, com unidade opcional — por exemplo "1.5 GB".`,
+      `Não é um número reconhecível: "${text}". Esperado um valor como 1024 ou 1.5.`,
     );
   }
 
-  const value = Number(match[1].replace(",", "."));
+  const value = Number(text.replace(",", "."));
   if (!Number.isFinite(value)) {
-    throw new OperationError(`Número fora de faixa na linha ${line}: "${raw.trim()}".`);
+    throw new OperationError(`Número fora de faixa: "${text}".`);
   }
 
-  return { value, unit: match[2] === "" ? fallback : readUnit(match[2], line) };
+  return value;
 }
 
 /**
@@ -187,20 +151,11 @@ function conventionNote(from: DataUnit, to: DataUnit, base: Base): string | unde
 }
 
 function convert(input: string, from: DataUnit, to: DataUnit, base: Base): EngineResult {
-  if (input.trim() === "") return "";
+  const value = parseValue(input);
+  if (value === undefined) return "";
 
-  const fromFactor = factorInBits(from, base);
-  const toFactor = factorInBits(to, base);
-
-  const output = input
-    .split(/\r\n|\r|\n/)
-    .map((raw, index) => {
-      if (raw.trim() === "") return "";
-      const { value, unit } = parseLine(raw, from, index + 1);
-      const factor = unit === from ? fromFactor : factorInBits(unit, base);
-      return formatNumber((value * factor) / toFactor);
-    })
-    .join("\n");
+  const converted = (value * factorInBits(from, base)) / factorInBits(to, base);
+  const output = formatNumber(converted);
 
   const note = conventionNote(from, to, base);
   return note ? { output, notes: [note] } : output;
