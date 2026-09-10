@@ -63,6 +63,12 @@ export type DirectionMeta = {
   label: string;
   inputLabel: string;
   outputLabel: string;
+  /**
+   * Uma linha sobre o que este sentido faz, exibida sob o seletor. Existe
+   * onde o rótulo do botão não basta: "Beautify" e "Minify" dizem o nome da
+   * operação, não o que ela produz.
+   */
+  help?: string;
 };
 
 /**
