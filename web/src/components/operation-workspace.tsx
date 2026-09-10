@@ -199,7 +199,7 @@ function Workspace({ operation }: { operation: Operation }) {
           />
         </div>
 
-        <footer className="mt-6 border-t border-border pt-4">
+        <footer className="mt-6 border-t border-border pt-4 text-center">
           <PrivacyNote processedOn={outcome.processedOn} />
         </footer>
       </div>

@@ -612,7 +612,7 @@ export function FileWorkspace({
 
         <AdvancedOptions options={levelOptions} values={options} onChange={setOption} />
 
-        <footer className="mt-2 border-t border-border pt-4">
+        <footer className="mt-2 border-t border-border pt-4 text-center">
           <PrivacyNote
             processedOn={routing.where === "server" ? "server" : "client"}
             reason={routing.reason}

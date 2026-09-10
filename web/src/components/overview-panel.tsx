@@ -99,7 +99,7 @@ export function OverviewPanel({
         </section>
       )}
 
-      <footer className="mt-14 border-t border-border pt-5 text-sm text-text-muted">
+      <footer className="mt-14 border-t border-border pt-5 text-center text-sm text-text-muted">
         {language === "pt" ? "Processamento local por padrão. Nada é salvo." : "Local processing by default. Nothing is saved."}
       </footer>
     </main>
