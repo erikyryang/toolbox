@@ -1,20 +1,34 @@
 schema: spec-driven
 
-# Project context (optional)
-# This is shown to AI when creating artifacts.
-# Add your tech stack, conventions, style guides, domain knowledge, etc.
-# Example:
-#   context: |
-#     Tech stack: TypeScript, React, Node.js
-#     We use conventional commits
-#     Domain: e-commerce platform
+context: |
+  Toolbox — utilitários de conversão, codificação e compactação de dados e
+  arquivos. Sem contas, sem histórico, sem armazenamento.
 
-# Per-artifact rules (optional)
-# Add custom rules for specific artifacts.
-# Example:
-#   rules:
-#     proposal:
-#       - Keep proposals under 500 words
-#       - Always include a "Non-goals" section
-#     tasks:
-#       - Break tasks into chunks of max 2 hours
+  Stack:
+    - web/ — Next.js 16 (App Router), React 19, TypeScript, Tailwind 4,
+      Vitest. Uma rota estática por operação. Compactação em Web Worker com
+      WASM (fflate, @bokuweb/zstd-wasm).
+    - server/ — Go 1.25, biblioteca padrão mais sevenzip, rardecode e
+      klauspost/compress. Só HTTP; nenhum client de banco, cache ou fila entra
+      no módulo.
+
+  Princípios que qualquer proposta precisa respeitar:
+    - Nada de conteúdo de usuário é persistido, cacheado ou registrado em log.
+      Temporário só em tmpfs, com unlink na criação.
+    - O navegador é o padrão. O backend é apêndice opcional: com ele ausente,
+      o produto continua útil. Onde a operação roda é decidido antes de rodar,
+      por regra explícita em decideRouting(), e o aviso na tela lê a mesma
+      decisão.
+    - Catálogo (dado puro) é separado dos motores (execução), para que listar
+      uma operação não arraste o motor dela para o bundle.
+    - Motores são funções puras: entram texto e opções, sai texto ou erro
+      tipado.
+    - Limites — teto de tamanho, guarda anti-bomba, semáforo, rate limit,
+      timeout — são requisito de produto, não detalhe de operação.
+
+  Convenções:
+    - Specs, proposals, designs e comentários de código em português.
+      Identificadores, mensagens de commit e o README raiz em inglês.
+    - Commits no padrão conventional, com escopo (`feat(web):`, `refactor:`).
+    - A interface começa em português e alterna para inglês pelo cabeçalho;
+      toda operação nova precisa das duas traduções.
