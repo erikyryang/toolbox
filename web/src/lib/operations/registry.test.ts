@@ -9,7 +9,7 @@ import {
 } from "./catalog.ts";
 import { formatForSlug, slugForFormat } from "./compression-catalog.ts";
 import { getOperation, implementedSlugs } from "./registry.ts";
-import { defaultOptionValues } from "./types.ts";
+import { defaultOptionValues, splitOptions } from "./types.ts";
 
 /**
  * Operações de arquivo não têm motor de texto: elas rodam no worker de
@@ -119,6 +119,31 @@ describe("catálogo e motores", () => {
       if (operation.engines.reverse) {
         expect(() => operation.engines.reverse!("", options), meta.slug).not.toThrow();
       }
+    }
+  });
+
+  it("toda opção declarada como principal existe na operação", () => {
+    for (const meta of operationCatalog) {
+      const ids = meta.options.map((option) => option.id);
+      for (const id of meta.primaryOptionIds ?? []) {
+        expect(ids, `opção principal inexistente em ${meta.slug}: ${id}`).toContain(id);
+      }
+    }
+  });
+
+  it("principal e avançada juntas são todas as opções, sem repetição", () => {
+    for (const meta of operationCatalog) {
+      const { primary, advanced } = splitOptions(meta);
+      expect(primary.length + advanced.length, meta.slug).toBe(meta.options.length);
+      const ids = [...primary, ...advanced].map((option) => option.id);
+      expect(new Set(ids).size, meta.slug).toBe(ids.length);
+    }
+  });
+
+  it("sem declaração, toda opção continua atrás do disclosure", () => {
+    for (const meta of operationCatalog.filter((m) => m.primaryOptionIds === undefined)) {
+      expect(splitOptions(meta).primary, meta.slug).toEqual([]);
+      expect(splitOptions(meta).advanced.length, meta.slug).toBe(meta.options.length);
     }
   });
 

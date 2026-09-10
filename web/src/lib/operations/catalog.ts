@@ -1,6 +1,7 @@
 import { compressionOperations } from "./compression-catalog.ts";
 import { encodingOperations } from "./encoding-catalog.ts";
 import { formatterOperations } from "./format-catalog.ts";
+import { unitOperations } from "./units-catalog.ts";
 import type { OperationGroup, OperationMeta } from "./types.ts";
 
 /**
@@ -14,12 +15,14 @@ export const operationCatalog: OperationMeta[] = [
   ...encodingOperations,
   ...formatterOperations,
   ...compressionOperations,
+  ...unitOperations,
 ];
 
 export const GROUP_ORDER: OperationGroup[] = [
   "Codificação",
   "Formato",
   "Compactação",
+  "Unidades",
 ];
 
 /**

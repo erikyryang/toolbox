@@ -3,7 +3,7 @@
 import { useCallback, useId, useMemo, useState } from "react";
 import { ArrowRight, Clock } from "lucide-react";
 
-import { AdvancedOptions } from "@/components/advanced-options";
+import { AdvancedOptions, PrimaryOptions } from "@/components/advanced-options";
 import { OperationHeading } from "@/components/operation-heading";
 import { PrivacyNote } from "@/components/privacy-note";
 import { TextPanel } from "@/components/text-panel";
@@ -13,6 +13,7 @@ import { runOperation } from "@/lib/operations/run";
 import {
   defaultOptionValues,
   directionOf,
+  splitOptions,
   type Direction,
   type Operation,
   type OptionValue,
@@ -57,6 +58,7 @@ function Workspace({ operation }: { operation: Operation }) {
 
   const active = directionOf(localized, direction);
   const output = outcome.ok ? outcome.output : "";
+  const { primary, advanced } = splitOptions(localized);
 
   const setOption = useCallback((id: string, value: OptionValue) => {
     setOptions((current) => ({ ...current, [id]: value }));
@@ -155,6 +157,8 @@ function Workspace({ operation }: { operation: Operation }) {
           <p className="max-w-2xl text-xs text-text-muted">{active.help}</p>
         ) : null}
 
+        <PrimaryOptions options={primary} values={options} onChange={setOption} />
+
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <div className="flex flex-col gap-2">
             <TextPanel
@@ -195,13 +199,12 @@ function Workspace({ operation }: { operation: Operation }) {
           </div>
         </div>
 
-        <div className="mt-4">
-          <AdvancedOptions
-            options={localized.options}
-            values={options}
-            onChange={setOption}
-          />
-        </div>
+        {/* Sem opção avançada, nem o espaçamento sobra. */}
+        {advanced.length > 0 ? (
+          <div className="mt-4">
+            <AdvancedOptions options={advanced} values={options} onChange={setOption} />
+          </div>
+        ) : null}
 
         <footer className="mt-6 border-t border-border pt-4 text-center">
           <PrivacyNote processedOn={outcome.processedOn} />

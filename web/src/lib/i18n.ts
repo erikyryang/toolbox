@@ -14,8 +14,8 @@ export const LANGUAGE_STORAGE_KEY = "toolbox:language";
 export type Language = "pt" | "en";
 
 const groupNames: Record<Language, Record<OperationGroup, string>> = {
-  pt: { Codificação: "Codificação", Formato: "Formato", Compactação: "Compactação" },
-  en: { Codificação: "Encoding", Formato: "Formats", Compactação: "Compression" },
+  pt: { Codificação: "Codificação", Formato: "Formato", Compactação: "Compactação", Unidades: "Unidades" },
+  en: { Codificação: "Encoding", Formato: "Formats", Compactação: "Compression", Unidades: "Units" },
 };
 
 export function groupName(group: OperationGroup, language: Language): string {
@@ -49,6 +49,26 @@ const englishOperations: Partial<Record<string, Partial<OperationMeta>>> = {
       "Join several lines of text into a single line, with separator choice, whitespace trimming, and empty-line removal, processed in your browser.",
     forward: { label: "Join", inputLabel: "Text", outputLabel: "Single line" },
   },
+  "tamanho-de-dados": {
+    name: "Data size",
+    title: "Data size",
+    subtitle:
+      "Convert between bit, byte, KB, MB, GB, and TB, with the base you choose rather than the one a tool assumes.",
+    description:
+      "Data size unit converter between bit, byte, KB, MB, GB, and TB, with an explicit choice between base 1000 (SI) and 1024 (IEC), processed in your browser.",
+    forward: {
+      label: "From → To",
+      inputLabel: "Value",
+      outputLabel: "Result",
+      help: "Converts from the unit picked in From to the one picked in To.",
+    },
+    reverse: {
+      label: "To → From",
+      inputLabel: "Value",
+      outputLabel: "Result",
+      help: "The way back: converts from the unit picked in To to the one picked in From.",
+    },
+  },
   "json-format": { title: "JSON: beautify and minify" },
   "xml-format": { title: "XML: beautify and minify" },
   compactar: {
@@ -77,6 +97,8 @@ const optionTranslations: Record<string, string> = {
   "Separador": "Separator", "Nada": "None", "Espaço": "Space", "Vírgula": "Comma",
   "Vírgula + espaço": "Comma + space", "Ponto e vírgula": "Semicolon", "Barra vertical": "Pipe",
   "Aparar espaços": "Trim whitespace", "Descartar linhas vazias": "Drop empty lines",
+  "De": "From", "Para": "To", "Base": "Base",
+  "1024 (binária, IEC)": "1024 (binary, IEC)", "1000 (decimal, SI)": "1000 (decimal, SI)",
   "Nível exato": "Exact level", "Rápido": "Fast", "Equilibrado": "Balanced", "Máximo": "Maximum", "Customizado": "Custom",
 };
 
@@ -91,6 +113,10 @@ const helpTranslations: Record<string, string> = {
     "When on, the whitespace around each line is left out.",
   "Desligado, cada linha vazia vira um separador na saída.":
     "When off, each empty line becomes a separator in the output.",
+  "Uma unidade escrita junto do valor — 1.5 GB — vence esta escolha.":
+    "A unit written next to the value — 1.5 GB — overrides this choice.",
+  "1024 é o que o sistema operacional reporta; 1000 é o que o fabricante imprime na caixa.":
+    "1024 is what the operating system reports; 1000 is what the manufacturer prints on the box.",
 };
 
 function localizeOption(option: OptionSpec, language: Language): OptionSpec {

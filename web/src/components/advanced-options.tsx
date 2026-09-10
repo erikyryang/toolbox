@@ -1,14 +1,18 @@
 "use client";
 
-import { useId } from "react";
 import { ChevronRight } from "lucide-react";
 
+import { OptionField } from "@/components/option-field";
 import type { OptionSpec, OptionValue, OptionValues } from "@/lib/operations/types";
 import { useLanguage } from "@/lib/language";
 
 /**
  * Opções avançadas atrás de um disclosure. Nascem recolhidas, com os padrões
  * já aplicados — quem só quer converter nunca precisa abrir isto.
+ *
+ * O que é *principal* na operação não chega aqui: aquilo aparece acima dos
+ * painéis, e a separação é feita por quem monta a tela. Sem nada para
+ * mostrar, o disclosure não é renderizado — um controle vazio é ruído.
  *
  * O <details> nativo já anuncia o estado expandido/recolhido para leitores de
  * tela e responde a Enter e Espaço sem código nosso.
@@ -49,66 +53,37 @@ export function AdvancedOptions({
   );
 }
 
-function OptionField({
-  option,
-  value,
+/**
+ * As opções que são o controle principal da operação: ficam à vista, acima
+ * dos painéis. Um conversor cuja base está escondida atrás de "opções
+ * avançadas" esconde a própria pergunta que ele existe para responder.
+ */
+export function PrimaryOptions({
+  options,
+  values,
   onChange,
 }: {
-  option: OptionSpec;
-  value: OptionValue | undefined;
+  options: OptionSpec[];
+  values: OptionValues;
   onChange: (id: string, value: OptionValue) => void;
 }) {
-  const id = useId();
-  const helpId = `${id}-help`;
-
-  if (option.kind === "boolean") {
-    return (
-      <div className="flex flex-col gap-1">
-        <div className="flex items-center gap-2">
-          <input
-            id={id}
-            type="checkbox"
-            checked={value === true}
-            onChange={(event) => onChange(option.id, event.target.checked)}
-            aria-describedby={option.help ? helpId : undefined}
-            className="size-4 accent-accent-solid"
-          />
-          <label htmlFor={id} className="section-title">
-            {option.label}
-          </label>
-        </div>
-        {option.help ? (
-          <p id={helpId} className="text-xs text-text-muted">
-            {option.help}
-          </p>
-        ) : null}
-      </div>
-    );
-  }
+  const { language } = useLanguage();
+  if (options.length === 0) return null;
 
   return (
-    <div className="flex flex-col gap-1">
-      <label htmlFor={id} className="section-title">
-        {option.label}
-      </label>
-      <select
-        id={id}
-        value={typeof value === "string" ? value : option.default}
-        onChange={(event) => onChange(option.id, event.target.value)}
-        aria-describedby={option.help ? helpId : undefined}
-        className="h-8 rounded-md border border-border-interactive bg-surface px-2 text-sm text-text"
-      >
-        {option.choices.map((choice) => (
-          <option key={choice.value} value={choice.value}>
-            {choice.label}
-          </option>
-        ))}
-      </select>
-      {option.help ? (
-        <p id={helpId} className="max-w-72 text-xs text-text-muted">
-          {option.help}
-        </p>
-      ) : null}
+    <div
+      role="group"
+      aria-label={language === "pt" ? "Opções da operação" : "Operation options"}
+      className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-start sm:gap-8"
+    >
+      {options.map((option) => (
+        <OptionField
+          key={option.id}
+          option={option}
+          value={values[option.id]}
+          onChange={onChange}
+        />
+      ))}
     </div>
   );
 }

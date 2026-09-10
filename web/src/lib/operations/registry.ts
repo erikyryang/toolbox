@@ -1,5 +1,6 @@
 import { decodeBase32, decodeBase58, encodeBase32, encodeBase58 } from "../engines/base32-58.ts";
 import { decodeBase64, encodeBase64 } from "../engines/base64.ts";
+import { convertDataSize, convertDataSizeBack } from "../engines/data-size.ts";
 import { joinLines } from "../engines/lines.ts";
 import { formatter } from "../engines/structured.ts";
 import { operationMetaBySlug } from "./catalog.ts";
@@ -19,6 +20,9 @@ const engines: Record<string, { forward: Engine; reverse?: Engine }> = {
 
   // Sentido único: o inverso seria outra operação, não a volta desta.
   "juntar-linhas": { forward: joinLines },
+
+  // O inverso é o mesmo motor com origem e destino trocados.
+  "tamanho-de-dados": { forward: convertDataSize, reverse: convertDataSizeBack },
 };
 
 export function getOperation(slug: string): Operation | undefined {

@@ -56,7 +56,7 @@ export type OperationOutcome =
   | { ok: true; output: string; processedOn: ProcessedOn; notes: string[] }
   | { ok: false; error: string; position?: number; processedOn: ProcessedOn };
 
-export type OperationGroup = "Codificação" | "Formato" | "Compactação";
+export type OperationGroup = "Codificação" | "Formato" | "Compactação" | "Unidades";
 
 /** Rótulos de um sentido da operação. Dados puros — atravessam o limite servidor/cliente. */
 export type DirectionMeta = {
@@ -102,6 +102,13 @@ export type OperationMeta = {
   /** Ausente quando a operação não admite inversão. */
   reverse?: DirectionMeta;
   options: OptionSpec[];
+  /**
+   * Ids das opções que são o controle principal da operação, e não um ajuste
+   * fino. Elas aparecem acima dos painéis; o restante fica atrás do
+   * disclosure de opções avançadas. Ausente, tudo é avançado — que é o caso
+   * de quase toda operação.
+   */
+  primaryOptionIds?: string[];
   /** Exemplo curto usado como placeholder do painel de entrada. */
   placeholder?: string;
   /**
@@ -146,6 +153,23 @@ export function defaultOptionValues(operation: OperationMeta): OptionValues {
 
 export function isReversible(operation: OperationMeta): boolean {
   return operation.reverse !== undefined;
+}
+
+/**
+ * Separa as opções em principais e avançadas, preservando a ordem declarada
+ * no catálogo dentro de cada grupo. Vive aqui, junto do modelo, para que a
+ * tela não precise conhecer a regra — e para que ela possa ser testada sem
+ * renderizar nada.
+ */
+export function splitOptions(operation: OperationMeta): {
+  primary: OptionSpec[];
+  advanced: OptionSpec[];
+} {
+  const ids = new Set(operation.primaryOptionIds ?? []);
+  return {
+    primary: operation.options.filter((option) => ids.has(option.id)),
+    advanced: operation.options.filter((option) => !ids.has(option.id)),
+  };
 }
 
 /** Rótulos do sentido ativo. */
