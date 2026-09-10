@@ -57,12 +57,12 @@ export async function compressOnServer(
   format: FormatId,
   preset: string,
   level: number,
-  files: { name: string; data: ArrayBuffer }[],
+  files: { name: string; data: Blob | ArrayBuffer }[],
   signal?: AbortSignal,
 ): Promise<Uint8Array> {
   const form = new FormData();
   for (const file of files) {
-    form.append("file", new Blob([file.data]), file.name);
+    form.append("file", file.data instanceof Blob ? file.data : new Blob([file.data]), file.name);
   }
 
   const query = new URLSearchParams({
@@ -81,7 +81,7 @@ export async function compressOnServer(
 }
 
 export async function inspectOnServer(
-  data: ArrayBuffer,
+  data: Blob | ArrayBuffer,
   signal?: AbortSignal,
 ): Promise<Archive> {
   const response = await fetch(
@@ -104,7 +104,7 @@ export async function inspectOnServer(
 }
 
 export async function extractOnServer(
-  data: ArrayBuffer,
+  data: Blob | ArrayBuffer,
   entryName: string | undefined,
   signal?: AbortSignal,
 ): Promise<Uint8Array> {
