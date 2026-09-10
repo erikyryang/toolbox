@@ -147,6 +147,7 @@ function Workspace({ operation }: { operation: Operation }) {
               label={active.outputLabel}
               value={output}
               readOnly
+              syntax={localized.syntax}
               downloadName={`${operation.slug}.txt`}
             />
 

@@ -7,6 +7,8 @@
  * sem tocar na interface.
  */
 
+import type { SyntaxLanguage } from "../highlight.ts";
+
 export type OptionValue = string | boolean | number;
 export type OptionValues = Record<string, OptionValue>;
 
@@ -96,6 +98,11 @@ export type OperationMeta = {
   options: OptionSpec[];
   /** Exemplo curto usado como placeholder do painel de entrada. */
   placeholder?: string;
+  /**
+   * Linguagem do painel de saída, quando ela tem sintaxe conhecida. Só afeta
+   * o realce: o texto exibido continua sendo exatamente o do motor.
+   */
+  syntax?: SyntaxLanguage;
   /**
    * Ações que preenchem a entrada com um valor gerado na hora. São
    * identificadores, não funções: o catálogo precisa atravessar o limite

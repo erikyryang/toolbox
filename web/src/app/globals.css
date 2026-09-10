@@ -28,6 +28,12 @@
   --color-focus-ring: var(--focus-ring);
   --color-danger: var(--danger);
   --color-danger-foreground: var(--danger-foreground);
+  --color-syntax-key: var(--syntax-key);
+  --color-syntax-string: var(--syntax-string);
+  --color-syntax-number: var(--syntax-number);
+  --color-syntax-atom: var(--syntax-atom);
+  --color-syntax-attr: var(--syntax-attr);
+  --color-syntax-punct: var(--syntax-punct);
 
   /* Nomes que o shadcn/ui espera encontrar */
   --color-background: var(--background);
