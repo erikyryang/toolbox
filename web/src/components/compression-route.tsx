@@ -6,21 +6,26 @@ import { operationMetaBySlug } from "@/lib/operations/catalog";
 import { localizeOperation, useLanguage } from "@/lib/language";
 
 /**
- * Liga uma rota de compactação ao seu formato. A rota "descompactar" não fixa
- * formato: ele é detectado pela assinatura do arquivo escolhido.
+ * Liga uma rota de compactação à tela de arquivos.
+ *
+ * São três casos. "descompactar" não fixa formato nenhum: ele é detectado pela
+ * assinatura do arquivo escolhido. "compactar" é a rota canônica, onde o
+ * formato começa em ZIP e o usuário troca na tela. As rotas por formato são a
+ * mesma tela, apenas semeada com o formato do endereço — é o que permite que
+ * /zstd continue sendo uma página própria sem virar um item de menu.
  */
 export function CompressionRoute({ slug }: { slug: string }) {
   const { language } = useLanguage();
   const operation = operationMetaBySlug(slug);
   if (!operation) throw new Error(`Operação desconhecida: ${slug}`);
 
-  const format = formatForSlug(slug);
+  const decompressing = slug === "descompactar";
 
   return (
     <FileWorkspace
       operation={localizeOperation(operation, language)}
-      mode={format ? "compress" : "decompress"}
-      format={format}
+      mode={decompressing ? "decompress" : "compress"}
+      initialFormat={formatForSlug(slug)}
     />
   );
 }

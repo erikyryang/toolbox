@@ -18,11 +18,7 @@ const (
 	Zip    Format = "zip"
 	Gzip   Format = "gzip"
 	Zstd   Format = "zstd"
-	Xz     Format = "xz"
-	Bzip2  Format = "bzip2"
 	Tar    Format = "tar"
-	TarGz  Format = "tar.gz"
-	TarZst Format = "tar.zst"
 	Rar    Format = "rar"
 	SevenZ Format = "7z"
 )
@@ -47,14 +43,10 @@ type Spec struct {
 }
 
 var specs = map[Format]Spec{
-	Zip:    {Zip, false, true, true, 0, 9, ".zip", "application/zip"},
-	Gzip:   {Gzip, true, false, true, 1, 9, ".gz", "application/gzip"},
-	Zstd:   {Zstd, true, false, true, 1, 22, ".zst", "application/zstd"},
-	Xz:     {Xz, true, false, true, 0, 9, ".xz", "application/x-xz"},
-	Bzip2:  {Bzip2, true, false, true, 1, 9, ".bz2", "application/x-bzip2"},
-	Tar:    {Tar, true, true, true, 0, 0, ".tar", "application/x-tar"},
-	TarGz:  {TarGz, true, true, true, 1, 9, ".tar.gz", "application/gzip"},
-	TarZst: {TarZst, true, true, true, 1, 22, ".tar.zst", "application/zstd"},
+	Zip:  {Zip, false, true, true, 0, 9, ".zip", "application/zip"},
+	Gzip: {Gzip, true, false, true, 1, 9, ".gz", "application/gzip"},
+	Zstd: {Zstd, true, false, true, 1, 22, ".zst", "application/zstd"},
+	Tar:  {Tar, true, true, true, 0, 0, ".tar", "application/x-tar"},
 	// RAR e 7Z: leitura apenas. Não há encoder livre viável para nenhum dos
 	// dois, e inventar um não é escopo deste serviço.
 	Rar:    {Rar, false, true, false, 0, 0, ".rar", "application/vnd.rar"},
@@ -97,14 +89,10 @@ const (
 // presetLevels espelha o mapa do cliente: o mesmo preset precisa dar o mesmo
 // nível dos dois lados, ou o resultado mudaria conforme onde a operação rodou.
 var presetLevels = map[Format]map[Preset]int{
-	Zip:    {Fast: 1, Balanced: 6, Max: 9},
-	Gzip:   {Fast: 1, Balanced: 6, Max: 9},
-	Zstd:   {Fast: 1, Balanced: 3, Max: 19},
-	Xz:     {Fast: 0, Balanced: 6, Max: 9},
-	Bzip2:  {Fast: 1, Balanced: 5, Max: 9},
-	Tar:    {Fast: 0, Balanced: 0, Max: 0},
-	TarGz:  {Fast: 1, Balanced: 6, Max: 9},
-	TarZst: {Fast: 1, Balanced: 3, Max: 19},
+	Zip:  {Fast: 1, Balanced: 6, Max: 9},
+	Gzip: {Fast: 1, Balanced: 6, Max: 9},
+	Zstd: {Fast: 1, Balanced: 3, Max: 19},
+	Tar:  {Fast: 0, Balanced: 0, Max: 0},
 }
 
 // LevelFor resolve preset e nível customizado num nível efetivo.
@@ -136,10 +124,6 @@ func Detect(head []byte) (Format, bool) {
 		return Gzip, true
 	case hasPrefix(head, []byte{0x28, 0xb5, 0x2f, 0xfd}):
 		return Zstd, true
-	case hasPrefix(head, []byte{0xfd, '7', 'z', 'X', 'Z', 0x00}):
-		return Xz, true
-	case hasPrefix(head, []byte{'B', 'Z', 'h'}):
-		return Bzip2, true
 	case len(head) >= 262 && string(head[257:262]) == "ustar":
 		return Tar, true
 	}

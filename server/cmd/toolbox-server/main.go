@@ -1,8 +1,7 @@
 // Command toolbox-server é o backend de compactação do toolbox.
 //
 // Ele existe só para o que o navegador não dá conta: arquivos acima do limite
-// client-side, leitura de RAR e 7Z, compressão em XZ e BZIP2 (que não têm
-// compressor no navegador) e ZSTD em níveis altos.
+// client-side, leitura de RAR, 7Z e ZSTD, e ZSTD em níveis altos.
 //
 // Não há camada de armazenamento no binário — nenhum client de banco, cache ou
 // fila entra no módulo. O que não existe não pode ser usado por engano.

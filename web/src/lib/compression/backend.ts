@@ -7,7 +7,7 @@ import type { FormatId } from "./formats.ts";
  * Cliente do backend de compactação.
  *
  * Só é acionado quando a decisão de roteamento diz `server` — arquivo acima do
- * limite local, RAR, 7Z, compressão em XZ/BZIP2 ou ZSTD em nível alto. Se o
+ * limite local, RAR, 7Z, leitura de ZSTD ou ZSTD em nível alto. Se o
  * endereço não estiver configurado, o backend simplesmente não existe para
  * esta instalação, e a interface diz isso em vez de tentar e falhar.
  */

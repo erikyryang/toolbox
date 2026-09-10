@@ -7,6 +7,8 @@
  * sem tocar na interface.
  */
 
+import type { SyntaxLanguage } from "../highlight.ts";
+
 export type OptionValue = string | boolean | number;
 export type OptionValues = Record<string, OptionValue>;
 
@@ -96,6 +98,22 @@ export type OperationMeta = {
   options: OptionSpec[];
   /** Exemplo curto usado como placeholder do painel de entrada. */
   placeholder?: string;
+  /**
+   * Linguagem do painel de saída, quando ela tem sintaxe conhecida. Só afeta
+   * o realce: o texto exibido continua sendo exatamente o do motor.
+   */
+  syntax?: SyntaxLanguage;
+  /**
+   * Termos alternativos pelos quais a busca deve encontrar esta operação —
+   * o que a pessoa digita ("unzip", "b64") raramente é o nome do produto.
+   */
+  aliases?: string[];
+  /**
+   * Fora da navegação, mas ainda uma rota: existe, é indexável e tem
+   * metadados próprios. É como as páginas por formato de compactação
+   * sobrevivem sem inchar o menu.
+   */
+  unlisted?: boolean;
   /**
    * Ações que preenchem a entrada com um valor gerado na hora. São
    * identificadores, não funções: o catálogo precisa atravessar o limite

@@ -3,7 +3,6 @@ package archive
 import (
 	"archive/tar"
 	"bytes"
-	"compress/bzip2"
 	"errors"
 	"fmt"
 	"io"
@@ -13,7 +12,6 @@ import (
 	kzip "github.com/klauspost/compress/zip"
 	"github.com/klauspost/compress/zstd"
 	"github.com/nwaples/rardecode/v2"
-	"github.com/ulikunitz/xz"
 
 	"github.com/erikyryan/toolbox/server/internal/bomb"
 )
@@ -52,7 +50,7 @@ func List(source ReaderAtSource, format Format, guard *bomb.Guard) (Listing, err
 		return listSevenZ(source, guard)
 	case Tar:
 		return listTar(io.NewSectionReader(source.ReaderAt, 0, source.Size), Tar, guard)
-	case Gzip, Zstd, Xz, Bzip2:
+	case Gzip, Zstd:
 		return listEnvelope(source, format, guard)
 	default:
 		return Listing{}, fmt.Errorf("%w: %s", ErrUnsupported, format)
@@ -183,7 +181,7 @@ func listEnvelope(source ReaderAtSource, format Format, guard *bomb.Guard) (List
 	// bloco inteiro, que já foi lido acima.
 	if len(head) >= 262 && string(head[257:262]) == "ustar" {
 		combined := io.MultiReader(bytes.NewReader(head), inner)
-		listing, err := listTar(combined, tarEnvelopeFormat(format), guard)
+		listing, err := listTar(combined, format, guard)
 		if err != nil {
 			return Listing{}, err
 		}
@@ -205,17 +203,6 @@ func listEnvelope(source ReaderAtSource, format Format, guard *bomb.Guard) (List
 	}, nil
 }
 
-func tarEnvelopeFormat(format Format) Format {
-	switch format {
-	case Gzip:
-		return TarGz
-	case Zstd:
-		return TarZst
-	default:
-		return format
-	}
-}
-
 // Extract escreve em w o conteúdo de uma entrada — ou o conteúdo único, para
 // formatos sem índice.
 func Extract(w io.Writer, source ReaderAtSource, format Format, entryName string, guard *bomb.Guard) (int64, error) {
@@ -230,7 +217,7 @@ func Extract(w io.Writer, source ReaderAtSource, format Format, entryName string
 		return extractSevenZ(guarded, source, entryName)
 	case Tar:
 		return extractTar(guarded, io.NewSectionReader(source.ReaderAt, 0, source.Size), entryName)
-	case Gzip, Zstd, Xz, Bzip2:
+	case Gzip, Zstd:
 		return extractEnvelope(guarded, source, format, entryName)
 	default:
 		return 0, fmt.Errorf("%w: %s", ErrUnsupported, format)
@@ -352,29 +339,19 @@ func extractEnvelope(w io.Writer, source ReaderAtSource, format Format, entryNam
 // streaming de verdade: memória constante, independente do tamanho.
 func openEnvelope(r io.Reader, format Format) (io.Reader, func(), error) {
 	switch format {
-	case Gzip, TarGz:
+	case Gzip:
 		reader, err := gzip.NewReader(r)
 		if err != nil {
 			return nil, nil, fmt.Errorf("GZIP inválido: %w", err)
 		}
 		return reader, func() { reader.Close() }, nil
 
-	case Zstd, TarZst:
+	case Zstd:
 		reader, err := zstd.NewReader(r)
 		if err != nil {
 			return nil, nil, fmt.Errorf("ZSTD inválido: %w", err)
 		}
 		return reader, reader.Close, nil
-
-	case Xz:
-		reader, err := xz.NewReader(r)
-		if err != nil {
-			return nil, nil, fmt.Errorf("XZ inválido: %w", err)
-		}
-		return reader, func() {}, nil
-
-	case Bzip2:
-		return bzip2.NewReader(r), func() {}, nil
 
 	default:
 		return nil, nil, fmt.Errorf("%w: %s", ErrUnsupported, format)

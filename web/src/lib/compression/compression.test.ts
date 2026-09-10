@@ -96,7 +96,7 @@ describe("compactação no navegador", () => {
 
   it("recusa compactar em formato sem compressor no navegador", async () => {
     await expect(
-      compress({ format: "xz", level: 6, files: files() }),
+      compress({ format: "rar", level: 6, files: files() }),
     ).rejects.toThrow(OperationError);
   });
 
@@ -111,21 +111,28 @@ describe("detecção de formato", () => {
   it.each(CLIENT_COMPRESSIBLE)("reconhece %s pela assinatura", async (format) => {
     const input = SINGLE_MEMBER.includes(format) ? [files()[0]] : files();
     const packed = await compress({ format, level: 3, files: input });
-    const detected = detectFormat(packed);
-
-    // tar.gz e tar.zst têm a assinatura do envelope; o TAR interno só aparece
-    // depois de descomprimir, e é a inspeção que resolve isso.
-    const expected =
-      format === "tar.gz" ? "gzip" : format === "tar.zst" ? "zstd" : format;
-    expect(detected).toBe(expected);
+    expect(detectFormat(packed)).toBe(format);
   });
 
-  it("distingue tar.gz de gzip simples na inspeção", async () => {
-    const tarGz = await compress({ format: "tar.gz", level: 3, files: files() });
-    const gzip = await compress({ format: "gzip", level: 3, files: [files()[0]] });
+  it("lista as entradas de um TAR dentro de um GZIP", async () => {
+    // O envelope não some da identificação: o formato continua GZIP, mas o
+    // índice passa a ser o do TAR de dentro, em vez de um conteúdo único.
+    const packed = await compress({
+      format: "gzip",
+      level: 3,
+      files: [{ name: "bundle.tar", data: createTar(files()) }],
+    });
 
-    expect((await inspect(tarGz)).format).toBe("tar.gz");
-    expect((await inspect(gzip, "a.txt.gz")).format).toBe("gzip");
+    const archive = await inspect(packed, "bundle.tar.gz");
+    expect(archive.format).toBe("gzip");
+    expect(archive.single).toBe(false);
+    expect(archive.entries.map((entry) => entry.name)).toEqual([
+      "a.txt",
+      "pasta/b.txt",
+    ]);
+
+    const extracted = await extract(packed, archive, "pasta/b.txt");
+    expect(decoder.decode(extracted)).toBe(CONTENT_B);
   });
 
   it("erra com clareza em formato desconhecido", async () => {
@@ -154,7 +161,6 @@ describe("presets de nível", () => {
   it("mapeia o preset máximo para o topo útil de cada formato", () => {
     expect(levelForPreset("gzip", "max")).toBe(9);
     expect(levelForPreset("zstd", "max")).toBe(19);
-    expect(levelForPreset("xz", "max")).toBe(9);
   });
 
   it("os presets crescem monotonicamente", () => {
@@ -191,18 +197,9 @@ describe("roteamento entre navegador e servidor", () => {
     }
   });
 
-  it("vai ao servidor para comprimir XZ e BZIP2", () => {
-    for (const format of ["xz", "bzip2"] as FormatId[]) {
-      expect(
-        decideRouting({ format, direction: "compress", sizeBytes: 1024, level: 6 }).where,
-        format,
-      ).toBe("server");
-    }
-  });
-
-  it("lê XZ no navegador e roteia BZIP2 ao servidor", () => {
-    expect(decideRouting({ format: "xz", direction: "decompress", sizeBytes: 1024 }).where).toBe("client");
-    expect(decideRouting({ format: "bzip2", direction: "decompress", sizeBytes: 1024 }).where).toBe("server");
+  it("lê GZIP no navegador e roteia ZSTD ao servidor", () => {
+    expect(decideRouting({ format: "gzip", direction: "decompress", sizeBytes: 1024 }).where).toBe("client");
+    expect(decideRouting({ format: "zstd", direction: "decompress", sizeBytes: 1024 }).where).toBe("server");
   });
 
   it("vai ao servidor acima do teto de nível do ZSTD", () => {

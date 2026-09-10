@@ -21,6 +21,12 @@
   --focus-ring: #0071e3;
   --danger: #c41e3a;
   --danger-foreground: #fbfbfd;
+  --syntax-key: #0a53b8;
+  --syntax-string: #0a6b3d;
+  --syntax-number: #8a4b00;
+  --syntax-atom: #6b34c9;
+  --syntax-attr: #0a6068;
+  --syntax-punct: #515154;
 
   /* Compatibilidade com as variáveis do shadcn/ui */
   --background: var(--surface);
@@ -96,6 +102,12 @@
   --focus-ring: #2997ff;
   --danger: #ff6961;
   --danger-foreground: #161617;
+  --syntax-key: #79c0ff;
+  --syntax-string: #7ee787;
+  --syntax-number: #ffa657;
+  --syntax-atom: #d2a8ff;
+  --syntax-attr: #56d4dd;
+  --syntax-punct: #a1a1a6;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -116,5 +128,11 @@
     --focus-ring: #2997ff;
     --danger: #ff6961;
     --danger-foreground: #161617;
+    --syntax-key: #79c0ff;
+    --syntax-string: #7ee787;
+    --syntax-number: #ffa657;
+    --syntax-atom: #d2a8ff;
+    --syntax-attr: #56d4dd;
+    --syntax-punct: #a1a1a6;
   }
 }

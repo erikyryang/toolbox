@@ -1,7 +1,7 @@
 // Package spool materializa o corpo de uma requisição para os formatos que
 // não podem ser lidos em streaming.
 //
-// GZIP, ZSTD, XZ, BZIP2 e TAR são sequenciais: entram por um io.Reader e saem
+// GZIP, ZSTD e TAR são sequenciais: entram por um io.Reader e saem
 // por um io.Writer com memória constante. ZIP, RAR e 7Z guardam o índice das
 // entradas no fim do arquivo e exigem io.ReaderAt — é preciso voltar atrás, e
 // para isso o conteúdo precisa existir em algum lugar.

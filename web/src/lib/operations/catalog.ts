@@ -1,6 +1,6 @@
 import { compressionOperations } from "./compression-catalog.ts";
 import { encodingOperationsPhase2 } from "./encoding-catalog.ts";
-import { formatPairOperations, formatterOperations } from "./format-catalog.ts";
+import { formatterOperations } from "./format-catalog.ts";
 import type { OperationGroup, OperationMeta } from "./types.ts";
 
 /**
@@ -22,6 +22,7 @@ const encodingOperationsPhase1: OperationMeta[] = [
     group: "Codificação",
     execution: "client",
     placeholder: "toolbox",
+    aliases: ["base64", "b64", "atob", "btoa", "rfc 4648", "url-safe"],
     forward: { label: "Codificar", inputLabel: "Texto", outputLabel: "Base64" },
     reverse: { label: "Decodificar", inputLabel: "Base64", outputLabel: "Texto" },
     options: [
@@ -45,49 +46,11 @@ const encodingOperationsPhase1: OperationMeta[] = [
       },
     ],
   },
-  {
-    slug: "hex",
-    name: "Hex",
-    title: "Hexadecimal",
-    subtitle:
-      "Converte texto em bytes hexadecimais e de volta, tolerando espaços e quebras de linha na entrada.",
-    description:
-      "Conversor hexadecimal: texto para bytes e bytes para texto, com escolha de caixa e separador, no seu navegador.",
-    group: "Codificação",
-    execution: "client",
-    placeholder: "AB",
-    forward: { label: "Codificar", inputLabel: "Texto", outputLabel: "Hexadecimal" },
-    reverse: { label: "Decodificar", inputLabel: "Hexadecimal", outputLabel: "Texto" },
-    options: [
-      {
-        kind: "select",
-        id: "case",
-        label: "Caixa dos dígitos",
-        default: "lower",
-        choices: [
-          { value: "lower", label: "Minúscula" },
-          { value: "upper", label: "Maiúscula" },
-        ],
-      },
-      {
-        kind: "select",
-        id: "separator",
-        label: "Separador",
-        help: "Só afeta a saída; na entrada, espaços são sempre tolerados.",
-        default: "none",
-        choices: [
-          { value: "none", label: "Nenhum" },
-          { value: "space", label: "Espaço a cada byte" },
-        ],
-      },
-    ],
-  },
 ];
 
 export const operationCatalog: OperationMeta[] = [
   ...encodingOperationsPhase1,
   ...encodingOperationsPhase2,
-  ...formatPairOperations,
   ...formatterOperations,
   ...compressionOperations,
 ];
@@ -98,6 +61,13 @@ export const GROUP_ORDER: OperationGroup[] = [
   "Compactação",
 ];
 
+/**
+ * As três operações oferecidas na home antes de qualquer busca. Vive aqui, e
+ * não no componente, porque é dado de catálogo: um slug que saia da navegação
+ * some do "Comece por aqui" sem nenhum erro — e o teste cobre esse vínculo.
+ */
+export const QUICK_START_SLUGS = ["base64", "json-format", "compactar"];
+
 export function operationMetaBySlug(slug: string): OperationMeta | undefined {
   return operationCatalog.find((operation) => operation.slug === slug);
 }
@@ -106,12 +76,19 @@ export function operationSlugs(): string[] {
   return operationCatalog.map((operation) => operation.slug);
 }
 
+/**
+ * As operações agrupadas para a navegação. Rotas `unlisted` ficam de fora
+ * daqui — e só daqui: elas continuam no catálogo, e portanto continuam
+ * virando rota estática com metadados próprios.
+ */
 export function operationsByGroup(): {
   group: OperationGroup;
   items: OperationMeta[];
 }[] {
   return GROUP_ORDER.map((group) => ({
     group,
-    items: operationCatalog.filter((operation) => operation.group === group),
+    items: operationCatalog.filter(
+      (operation) => operation.group === group && !operation.unlisted,
+    ),
   })).filter((entry) => entry.items.length > 0);
 }

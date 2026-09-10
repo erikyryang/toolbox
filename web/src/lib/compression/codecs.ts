@@ -100,12 +100,6 @@ export async function compress({
     case "tar":
       return createTar(files.map(toTarEntry));
 
-    case "tar.gz":
-      return gzip(createTar(files.map(toTarEntry)), level);
-
-    case "tar.zst":
-      return zstd(createTar(files.map(toTarEntry)), level);
-
     default:
       throw new OperationError(
         `${spec.label} não tem compressor no navegador.`,
@@ -132,36 +126,6 @@ async function gunzip(data: Uint8Array): Promise<Uint8Array> {
   for (let offset = 0; offset < data.length; offset += 64 * 1024) {
     stream.push(data.subarray(offset, offset + 64 * 1024), offset + 64 * 1024 >= data.length);
   }
-  return concat(chunks, guard.total());
-}
-
-async function unxz(data: Uint8Array): Promise<Uint8Array> {
-  // O pacote é publicado em CJS: conforme o empacotador, a classe chega como
-  // exportação nomeada ou pendurada no default.
-  const loaded = await import("xz-decompress");
-  const XzReadableStream =
-    loaded.XzReadableStream ??
-    (loaded as unknown as { default: typeof loaded }).default.XzReadableStream;
-
-  const guard = createBombGuard(data.length);
-
-  const source = new Response(data as BlobPart).body;
-  if (!source) {
-    throw new OperationError("Não foi possível abrir o arquivo XZ para leitura.");
-  }
-
-  const reader = new XzReadableStream(source).getReader();
-  const chunks: Uint8Array[] = [];
-
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    // O guarda roda a cada bloco: uma bomba é interrompida durante a
-    // descompressão, não depois de a memória já ter sido consumida.
-    guard.add(value.length);
-    chunks.push(value);
-  }
-
   return concat(chunks, guard.total());
 }
 
@@ -237,10 +201,7 @@ async function decompressEnvelope(
 ): Promise<Uint8Array> {
   switch (format) {
     case "gzip":
-    case "tar.gz":
       return gunzip(data);
-    case "xz":
-      return unxz(data);
     default:
       return data;
   }
@@ -320,13 +281,14 @@ export async function inspect(
     };
   }
 
-  // Envelope de um só membro: pode conter um TAR dentro.
+  // Envelope de um só membro: pode conter um TAR dentro, e nesse caso o
+  // índice de verdade é o do TAR — o formato continua sendo o do envelope.
   const inner = await decompressEnvelope(format, data);
   const innerFormat = detectFormat(inner);
 
   if (innerFormat === "tar") {
     return {
-      format: format === "gzip" ? "tar.gz" : format === "zstd" ? "tar.zst" : format,
+      format,
       single: false,
       payload: inner,
       entries: listTar(inner).map((entry) => ({

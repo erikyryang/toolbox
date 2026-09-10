@@ -5,12 +5,10 @@ simple interface, browser-first processing, and no accounts or history.
 
 ## Features
 
-- **Encoding:** Base64, Base32, Base58, hexadecimal, Unicode escape, JWT,
-  query strings, and charset conversion.
-- **Formats:** conversion between JSON, YAML, XML, and CSV, plus JSON and XML
-  formatting and minification.
-- **Compression:** ZIP, GZIP, ZSTD, XZ, BZIP2, TAR, and extraction for ZIP,
-  RAR, 7Z, and other formats.
+- **Encoding:** Base64, Base32, and Base58.
+- **Formats:** JSON and XML formatting and minification.
+- **Compression:** ZIP, GZIP, ZSTD, TAR, and extraction for ZIP, RAR, 7Z, and
+  other formats.
 - **Portuguese and English:** the interface starts in Portuguese and can be
   switched from the header. The preference stays only in the browser.
 - **Light and dark themes:** follows the system setting until a theme is

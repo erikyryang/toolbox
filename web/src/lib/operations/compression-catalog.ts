@@ -9,11 +9,23 @@ import type { OperationMeta, OptionSpec } from "./types.ts";
 /**
  * Entradas de catálogo da compactação.
  *
- * Uma rota por formato de saída, e uma rota única para descompactar — que
- * detecta o formato pela assinatura do arquivo, não pela extensão.
+ * A navegação tem duas entradas simétricas — compactar e descompactar — mas o
+ * catálogo tem mais rotas do que isso: cada formato de saída mantém a sua,
+ * marcada como `unlisted`. Elas não aparecem no menu; existem porque cada uma
+ * é uma página endereçável, com título e descrição próprios, e porque
+ * "compactar em zip" é o que as pessoas de fato procuram. Abrir uma delas é
+ * abrir a tela de compactar com aquele formato já escolhido.
+ *
+ * Descompactar continua sendo uma rota só: ali não há o que escolher, porque
+ * a assinatura do arquivo já diz o que ele é.
  */
 
-function levelOptions(format: FormatId): OptionSpec[] {
+/**
+ * Opções de nível do formato escolhido. É função do formato, e não da rota,
+ * porque o formato virou um controle da tela: trocar de ZSTD para GZIP muda o
+ * range de 1–22 para 1–9, e a lista precisa acompanhar.
+ */
+export function levelOptionsFor(format: FormatId): OptionSpec[] {
   const spec = FORMATS[format];
   if (!spec.levels) return [];
 
@@ -52,11 +64,7 @@ const SLUGS: Record<FormatId, string> = {
   zip: "zip",
   gzip: "gzip",
   zstd: "zstd",
-  xz: "xz",
-  bzip2: "bzip2",
   tar: "tar",
-  "tar.gz": "tar-gz",
-  "tar.zst": "tar-zst",
   rar: "rar",
   "7z": "7z",
 };
@@ -86,28 +94,55 @@ function compressOperation(format: FormatId): OperationMeta {
     group: "Compactação",
     kind: "file",
     execution: local ? "auto" : "auto",
+    // A rota existe e é indexável, mas quem navega chega por "Compactar".
+    unlisted: true,
+    aliases: [spec.label.toLowerCase(), spec.extension.replace(".", ""), "compactar", "comprimir", "compress", "zipar"],
     forward: {
       label: "Compactar",
       inputLabel: "Arquivos",
       outputLabel: spec.label,
     },
-    options: levelOptions(format),
+    options: levelOptionsFor(format),
   };
 }
 
 export const compressOperations: OperationMeta[] = COMPRESSIBLE_FORMATS.map(compressOperation);
+
+/** A rota canônica de compactar: o formato é escolhido dentro dela. */
+export const compressEntryOperation: OperationMeta = {
+  slug: "compactar",
+  name: "Compactar",
+  title: "Compactar arquivos",
+  subtitle:
+    "Escolha o formato, junte os arquivos e baixe. ZIP e TAR guardam vários; GZIP e ZSTD, um por vez.",
+  description:
+    "Compactador de ZIP, GZIP, ZSTD e TAR com presets de nível, processado no seu navegador. Sem contas, sem histórico e sem armazenar nada.",
+  group: "Compactação",
+  kind: "file",
+  execution: "auto",
+  aliases: [
+    "compactar", "comprimir", "compress", "zipar", "arquivar",
+    "zip", "gzip", "zstd", "tar", "gz", "zst",
+  ],
+  forward: { label: "Compactar", inputLabel: "Arquivos", outputLabel: "Arquivo compactado" },
+  options: [],
+};
 
 export const decompressOperation: OperationMeta = {
   slug: "descompactar",
   name: "Descompactar",
   title: "Descompactar",
   subtitle:
-    "Abre ZIP, TAR, GZIP e XZ no navegador e lista o conteúdo antes de extrair. ZSTD, BZIP2, RAR e 7Z vão para o servidor.",
+    "Abre ZIP, TAR e GZIP no navegador e lista o conteúdo antes de extrair. ZSTD, RAR e 7Z vão para o servidor.",
   description:
-    "Descompactador de ZIP, RAR, 7Z, TAR, GZIP, ZSTD, XZ e BZIP2, com listagem de entradas e extração seletiva.",
+    "Descompactador de ZIP, RAR, 7Z, TAR, GZIP e ZSTD, com listagem de entradas e extração seletiva.",
   group: "Compactação",
   kind: "file",
   execution: "auto",
+  aliases: [
+    "descompactar", "extrair", "abrir", "unzip", "gunzip", "untar",
+    "extract", "unarchive", "zip", "rar", "7z", "tar", "gzip", "zstd",
+  ],
   forward: {
     label: "Descompactar",
     inputLabel: "Arquivo",
@@ -117,6 +152,8 @@ export const decompressOperation: OperationMeta = {
 };
 
 export const compressionOperations: OperationMeta[] = [
-  ...compressOperations,
+  compressEntryOperation,
   decompressOperation,
+  // Depois das duas entradas visíveis: são rotas, não itens de menu.
+  ...compressOperations,
 ];

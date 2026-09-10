@@ -6,9 +6,9 @@ import { ArrowUpRight, Archive, Braces, Code2, Search } from "lucide-react";
 
 import type { OperationGroup, OperationMeta } from "@/lib/operations/types";
 import { groupName, localizeOperation, useLanguage } from "@/lib/language";
+import { QUICK_START_SLUGS } from "@/lib/operations/catalog";
 
 const groupIcon = { Codificação: Code2, Formato: Braces, Compactação: Archive };
-const quickSlugs = ["base64", "json-format", "zip"];
 
 export function OverviewPanel({
   groups,
@@ -20,17 +20,22 @@ export function OverviewPanel({
   const normalized = query.trim().toLocaleLowerCase(language === "pt" ? "pt-BR" : "en");
   const quickActions = groups
     .flatMap(({ items }) => items)
-    .filter((operation) => quickSlugs.includes(operation.slug));
+    .filter((operation) => QUICK_START_SLUGS.includes(operation.slug));
+  const locale = language === "pt" ? "pt-BR" : "en";
   const matches = useMemo(
     () => groups.map(({ group, items }) => ({
       group,
-      items: items.filter((operation) =>
-        `${localizeOperation(operation, language).name} ${localizeOperation(operation, language).title} ${localizeOperation(operation, language).subtitle}`
-          .toLocaleLowerCase(language === "pt" ? "pt-BR" : "en")
-          .includes(normalized),
-      ),
+      items: items.filter((operation) => {
+        const localized = localizeOperation(operation, language);
+        // Os aliases entram na busca porque quem procura digita "unzip" ou
+        // "b64", quase nunca o nome que a ferramenta usa.
+        return [localized.name, localized.title, localized.subtitle, ...(operation.aliases ?? [])]
+          .join(" ")
+          .toLocaleLowerCase(locale)
+          .includes(normalized);
+      }),
     })).filter(({ items }) => items.length > 0),
-    [groups, language, normalized],
+    [groups, language, locale, normalized],
   );
 
   return (
@@ -53,7 +58,7 @@ export function OverviewPanel({
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder={language === "pt" ? "Buscar ferramenta" : "Search tools"}
-          className="h-12 w-full rounded-xl border border-border bg-surface-raised pl-11 pr-4 text-base text-text outline-none placeholder:text-text-muted focus:border-accent"
+          className="h-12 w-full rounded-xl border border-border bg-surface-raised pl-11 pr-4 text-base text-text placeholder:text-text-muted focus:border-accent"
         />
       </label>
 

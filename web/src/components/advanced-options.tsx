@@ -33,7 +33,6 @@ export function AdvancedOptions({
           className="size-3.5 transition-transform group-open:rotate-90"
         />
         {language === "pt" ? "Opções avançadas" : "Advanced options"}
-        <span className="text-xs text-text-muted">· {options.length} {language === "pt" ? "controles" : "controls"}</span>
       </summary>
 
       <div className="flex flex-col gap-4 pt-4 sm:flex-row sm:flex-wrap sm:gap-8">

@@ -6,11 +6,9 @@ import (
 	"io"
 	"time"
 
-	dsnetbzip2 "github.com/dsnet/compress/bzip2"
 	"github.com/klauspost/compress/gzip"
 	kzip "github.com/klauspost/compress/zip"
 	"github.com/klauspost/compress/zstd"
-	"github.com/ulikunitz/xz"
 )
 
 // Source é um arquivo de entrada para a compactação. O conteúdo chega como
@@ -54,22 +52,6 @@ func Compress(w io.Writer, format Format, level int, sources []Source) (int64, e
 	case Zstd:
 		err = withZstd(counter, level, func(inner io.Writer) error {
 			return copySingle(inner, sources)
-		})
-	case Xz:
-		err = withXz(counter, func(inner io.Writer) error {
-			return copySingle(inner, sources)
-		})
-	case Bzip2:
-		err = withBzip2(counter, level, func(inner io.Writer) error {
-			return copySingle(inner, sources)
-		})
-	case TarGz:
-		err = withGzip(counter, level, func(inner io.Writer) error {
-			return writeTar(inner, sources)
-		})
-	case TarZst:
-		err = withZstd(counter, level, func(inner io.Writer) error {
-			return writeTar(inner, sources)
 		})
 	default:
 		err = fmt.Errorf("%w: %s", ErrUnsupported, format)
@@ -158,30 +140,6 @@ func withGzip(w io.Writer, level int, write func(io.Writer) error) error {
 
 func withZstd(w io.Writer, level int, write func(io.Writer) error) error {
 	writer, err := zstd.NewWriter(w, zstd.WithEncoderLevel(zstdLevel(level)))
-	if err != nil {
-		return err
-	}
-	if err := write(writer); err != nil {
-		writer.Close()
-		return err
-	}
-	return writer.Close()
-}
-
-func withXz(w io.Writer, write func(io.Writer) error) error {
-	writer, err := xz.NewWriter(w)
-	if err != nil {
-		return err
-	}
-	if err := write(writer); err != nil {
-		writer.Close()
-		return err
-	}
-	return writer.Close()
-}
-
-func withBzip2(w io.Writer, level int, write func(io.Writer) error) error {
-	writer, err := dsnetbzip2.NewWriter(w, &dsnetbzip2.WriterConfig{Level: level})
 	if err != nil {
 		return err
 	}
