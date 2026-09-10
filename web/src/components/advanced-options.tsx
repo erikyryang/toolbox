@@ -27,7 +27,7 @@ export function AdvancedOptions({
 
   return (
     <details className="group rounded-md border border-border bg-surface-raised px-3 py-2.5">
-      <summary className="flex cursor-pointer list-none items-center gap-1.5 text-sm text-text transition-colors hover:text-accent-text [&::-webkit-details-marker]:hidden">
+      <summary className="flex cursor-pointer list-none items-center gap-1.5 text-xs uppercase tracking-label text-text transition-colors hover:text-accent-text [&::-webkit-details-marker]:hidden">
         <ChevronRight
           aria-hidden
           className="size-3.5 transition-transform group-open:rotate-90"
@@ -73,7 +73,7 @@ function OptionField({
             aria-describedby={option.help ? helpId : undefined}
             className="size-4 accent-accent-solid"
           />
-          <label htmlFor={id} className="text-sm text-text">
+          <label htmlFor={id} className="section-title">
             {option.label}
           </label>
         </div>
@@ -88,7 +88,7 @@ function OptionField({
 
   return (
     <div className="flex flex-col gap-1">
-      <label htmlFor={id} className="text-sm text-text">
+      <label htmlFor={id} className="section-title">
         {option.label}
       </label>
       <select

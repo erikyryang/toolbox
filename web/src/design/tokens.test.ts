@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   contrastRatio,
   isPureBlackOrWhite,
+  isWarm,
 } from "./contrast.ts";
 import {
   MIN_RATIO,
@@ -22,13 +23,63 @@ describe("tokens semânticos", () => {
     }
   });
 
-  it("preserva a paleta de sistema", () => {
-    expect(themes.light.surface).toBe("#f5f5f7");
-    expect(themes.dark.surface).toBe("#161617");
-    expect(themes.light.text).toBe("#1d1d1f");
-    expect(themes.light.accent).toBe("#0071e3");
-    expect(themes.dark.accent).toBe("#2997ff");
+  it("preserva a paleta de papel quente", () => {
+    expect(themes.light.surface).toBe("#faf7f1");
+    expect(themes.light["surface-raised"]).toBe("#f3ebdd");
+    expect(themes.dark.surface).toBe("#171310");
+    expect(themes.dark["surface-raised"]).toBe("#26201a");
+    expect(themes.light.text).toBe("#201c15");
+    expect(themes.dark.text).toBe("#ede5d8");
+    expect(themes.light.accent).toBe("#b3431f");
+    expect(themes.dark.accent).toBe("#e0784a");
   });
+
+  /*
+   * A paleta de sintaxe é a única exceção à regra de tom quente — ela precisa
+   * de hues separados para distinguir chave, string, número e átomo. Todo o
+   * resto é neutro ou acento, e neutro frio é o que a troca de paleta veio
+   * desfazer.
+   */
+  const warmTokens = [
+    "surface",
+    "surface-raised",
+    "text",
+    "text-muted",
+    "border",
+    "border-interactive",
+    "accent",
+    "accent-solid",
+    "accent-solid-hover",
+    "accent-foreground",
+    "accent-text",
+    "focus-ring",
+  ] as const;
+
+  it.each(themeNames)("nenhum neutro do tema %s é frio", (theme) => {
+    for (const name of warmTokens) {
+      const value = themes[theme][name];
+      expect(isWarm(value), `${name} = ${value}`).toBe(true);
+    }
+  });
+
+  const syntaxTokens = [
+    "syntax-key",
+    "syntax-string",
+    "syntax-number",
+    "syntax-atom",
+    "syntax-attr",
+    "syntax-punct",
+  ] as const;
+
+  it.each(themeNames)(
+    "nenhuma cor de sintaxe do tema %s se confunde com o acento",
+    (theme) => {
+      for (const name of syntaxTokens) {
+        expect(themes[theme][name], name).not.toBe(themes[theme].accent);
+        expect(themes[theme][name], name).not.toBe(themes[theme]["accent-solid"]);
+      }
+    },
+  );
 
   it.each(themeNames)(
     "nenhum token do tema %s é branco ou preto puro",

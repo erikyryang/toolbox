@@ -4,6 +4,7 @@ import { useCallback, useId, useMemo, useState } from "react";
 import { ArrowRight, Clock } from "lucide-react";
 
 import { AdvancedOptions } from "@/components/advanced-options";
+import { OperationHeading } from "@/components/operation-heading";
 import { PrivacyNote } from "@/components/privacy-note";
 import { TextPanel } from "@/components/text-panel";
 import { Button } from "@/components/ui/button";
@@ -21,8 +22,8 @@ import { cn } from "@/lib/utils";
 import { localizeOperation, useLanguage } from "@/lib/language";
 
 /**
- * A tela de uma operação: título serifado, dois painéis mono, opções atrás de
- * disclosure e o aviso de privacidade. Toda rota de operação monta este mesmo
+ * A tela de uma operação: cabeçalho com linha de prompt, dois painéis, opções
+ * atrás de disclosure e o aviso de privacidade. Toda rota de operação monta este mesmo
  * componente, parametrizado pelo descritor da operação.
  *
  * Não existe botão "converter": a saída é recalculada a cada mudança de
@@ -90,12 +91,11 @@ function Workspace({ operation }: { operation: Operation }) {
 
   return (
     <main className="mx-auto w-full max-w-[var(--content-max-width)] px-4 py-10 sm:px-6 sm:py-14">
-      <header className="flex flex-col gap-2">
-        <h1 className="text-3xl font-semibold tracking-tight text-text">
-          {localized.title}
-        </h1>
-        <p className="max-w-2xl text-sm text-text-muted">{localized.subtitle}</p>
-      </header>
+      <OperationHeading
+        slug={operation.slug}
+        title={localized.title}
+        subtitle={localized.subtitle}
+      />
 
       <div className="mt-10 flex flex-col gap-3">
         {localized.reverse ? (
@@ -108,7 +108,7 @@ function Workspace({ operation }: { operation: Operation }) {
             <div
               role="group"
               aria-label={language === "pt" ? "Sentido da conversão" : "Conversion direction"}
-              className="inline-flex rounded-lg border border-border-interactive p-0.5"
+              className="inline-flex rounded-md border border-border-interactive p-0.5"
             >
               {(["forward", "reverse"] as Direction[]).map((option) => {
                 const meta = directionOf(localized, option);
@@ -120,9 +120,9 @@ function Workspace({ operation }: { operation: Operation }) {
                     aria-pressed={current}
                     onClick={() => switchTo(option)}
                     className={cn(
-                      "rounded-md px-3 py-1 text-sm transition-colors",
+                      "rounded-md px-3 py-1 text-xs uppercase tracking-label transition-colors",
                       current
-                        ? "bg-accent-solid font-medium text-accent-foreground"
+                        ? "bg-accent-solid text-accent-foreground"
                         : "text-text-muted hover:text-text",
                     )}
                   >
@@ -186,7 +186,7 @@ function Workspace({ operation }: { operation: Operation }) {
             {outcome.ok && outcome.notes.length > 0 ? (
               <ul className="flex flex-col gap-1">
                 {outcome.notes.map((note) => (
-                  <li key={note} className="text-sm text-text-muted">
+                  <li key={note} className="bullet-arrow text-sm text-text-muted">
                     {note}
                   </li>
                 ))}

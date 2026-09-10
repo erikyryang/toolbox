@@ -9,6 +9,7 @@ import {
   storeTheme,
   type Theme,
 } from "@/lib/theme";
+import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/lib/language";
 
 /**
@@ -61,18 +62,15 @@ export function ThemeToggle() {
     : (language === "pt" ? "Usar tema escuro" : "Use dark theme");
 
   return (
-    <button
+    <Button
       type="button"
+      variant="chip"
+      size="chip"
       onClick={toggle}
       aria-label={label}
       title={label}
-      className="flex size-8 items-center justify-center rounded-md text-text-muted transition-colors hover:bg-surface-raised hover:text-text"
     >
-      {theme === "dark" ? (
-        <Sun aria-hidden className="size-4" />
-      ) : (
-        <Moon aria-hidden className="size-4" />
-      )}
-    </button>
+      {theme === "dark" ? <Sun aria-hidden /> : <Moon aria-hidden />}
+    </Button>
   );
 }

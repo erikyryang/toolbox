@@ -10,8 +10,9 @@ import {
   fontSizes,
   layout,
   lineHeights,
-  radii,
+  radius,
   spacing,
+  tracking,
   themes,
   type SemanticToken,
   type ThemeName,
@@ -75,15 +76,14 @@ ${colorBlock("light", "  ")}
 ${shadcnBlock("  ")}
 
   /* Tipografia */
-  --font-sans: ${fontFamilies.sans};
-  --font-serif: ${fontFamilies.serif};
   --font-mono: ${fontFamilies.mono};
 ${scaleBlock("text", fontSizes)}
 ${scaleBlock("leading", lineHeights)}
+${scaleBlock("tracking", tracking)}
 
   /* Espaçamento e raio */
 ${scaleBlock("space", spacing)}
-${scaleBlock("radius", radii)}
+  --radius: ${radius};
 
   /* Layout */
   --content-max-width: ${layout.contentMaxWidth};

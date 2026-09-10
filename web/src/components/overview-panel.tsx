@@ -2,13 +2,11 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowUpRight, Archive, Braces, Code2, Search } from "lucide-react";
+import { ArrowUpRight, Search } from "lucide-react";
 
 import type { OperationGroup, OperationMeta } from "@/lib/operations/types";
 import { groupName, localeOf, localizeOperation, matchesQuery, useLanguage } from "@/lib/language";
 import { QUICK_START_SLUGS } from "@/lib/operations/catalog";
-
-const groupIcon = { Codificação: Code2, Formato: Braces, Compactação: Archive };
 
 export function OverviewPanel({
   groups,
@@ -32,11 +30,13 @@ export function OverviewPanel({
   return (
     <main className="mx-auto w-full max-w-[var(--content-max-width)] px-4 py-12 sm:px-8 sm:py-16">
       <header className="max-w-2xl">
-        <p className="text-sm font-medium text-accent-text">toolbox</p>
-        <h1 className="mt-2 text-4xl font-semibold tracking-tight text-text sm:text-5xl">
+        <p className="text-sm text-text-muted" aria-hidden>
+          you@toolbox:~$ ls
+        </p>
+        <h1 className="mt-2 text-display font-bold leading-tight tracking-tight text-text">
           {language === "pt" ? "O que você quer fazer?" : "What would you like to do?"}
         </h1>
-        <p className="mt-3 text-base text-text-muted">
+        <p className="mt-3 text-md text-text-muted">
           {language === "pt" ? "Escolha uma ferramenta na barra lateral ou encontre uma por aqui." : "Choose a tool from the sidebar or find one here."}
         </p>
       </header>
@@ -49,13 +49,13 @@ export function OverviewPanel({
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder={language === "pt" ? "Buscar ferramenta" : "Search tools"}
-          className="h-12 w-full rounded-xl border border-border bg-surface-raised pl-11 pr-4 text-base text-text placeholder:text-text-muted focus:border-accent"
+          className="h-12 w-full rounded-md border border-border bg-surface-raised pl-11 pr-4 text-md text-text placeholder:text-text-muted focus:border-accent"
         />
       </label>
 
       {normalized === "" ? (
         <section className="mt-10">
-          <h2 className="text-sm font-medium text-text">{language === "pt" ? "Comece por aqui" : "Start here"}</h2>
+          <h2 className="section-title">{language === "pt" ? "Comece por aqui" : "Start here"}</h2>
           <div className="mt-3 grid gap-3 sm:grid-cols-3">
             {quickActions.map((operation) => (
               <OperationCard key={operation.slug} operation={operation} />
@@ -64,17 +64,18 @@ export function OverviewPanel({
         </section>
       ) : (
         <section className="mt-10" aria-live="polite">
-          <h2 className="text-sm font-medium text-text">
-            {matches.reduce((total, { items }) => total + items.length, 0)} {language === "pt" ? "ferramentas encontradas" : "tools found"}
+          <h2 className="section-title">
+            <span className="tabular">
+              {matches.reduce((total, { items }) => total + items.length, 0)}
+            </span>{" "}
+            {language === "pt" ? "ferramentas encontradas" : "tools found"}
           </h2>
           {matches.length > 0 ? (
             <div className="mt-4 flex flex-col gap-7">
               {matches.map(({ group, items }) => {
-                const Icon = groupIcon[group];
                 return (
                   <div key={group}>
-                    <h3 className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-text-muted">
-                      <Icon aria-hidden className="size-3.5" />
+                    <h3 className="section-title">
                       {groupName(group, language)}
                     </h3>
                     <div className="mt-2 grid gap-3 sm:grid-cols-2">
@@ -103,10 +104,10 @@ function OperationCard({ operation }: { operation: OperationMeta }) {
   return (
     <Link
       href={`/${operation.slug}`}
-      className="group flex min-h-32 flex-col rounded-xl border border-border bg-surface-raised p-4 transition-colors hover:border-border-interactive hover:bg-surface"
+      className="group flex min-h-32 flex-col rounded-md border border-border bg-surface-raised p-4 transition-colors hover:border-accent hover:bg-surface"
     >
       <div className="flex items-start justify-between gap-3">
-        <span className="font-medium text-text">{localized.name}</span>
+        <span className="font-bold text-text">{localized.name}</span>
         <ArrowUpRight aria-hidden className="size-4 text-text-muted transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-accent-text" />
       </div>
       <span className="mt-2 text-sm leading-snug text-text-muted">{localized.subtitle}</span>

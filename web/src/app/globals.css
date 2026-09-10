@@ -53,13 +53,49 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
 
-  --font-sans: var(--font-sans);
-  --font-serif: var(--font-serif);
   --font-mono: var(--font-mono);
+  --font-sans: var(--font-mono);
+  --font-serif: var(--font-mono);
 
-  --radius-sm: var(--radius-sm);
-  --radius-md: var(--radius-md);
-  --radius-lg: var(--radius-lg);
+  /*
+   * Tipografia — a escala do sistema vence a do Tailwind. Cada tamanho
+   * declara a entrelinha que o acompanha: sem o par `--text-*--line-height`,
+   * o utilitário emite uma `line-height` inválida e o texto herda a
+   * entrelinha de corpo, larga demais para rótulo e título.
+   */
+  --text-xs: var(--text-xs);
+  --text-xs--line-height: var(--leading-snug);
+  --text-sm: var(--text-sm);
+  --text-sm--line-height: var(--leading-normal);
+  --text-base: var(--text-base);
+  --text-base--line-height: var(--leading-normal);
+  --text-md: var(--text-md);
+  --text-md--line-height: var(--leading-normal);
+  --text-lg: var(--text-lg);
+  --text-lg--line-height: var(--leading-snug);
+  --text-title: var(--text-title);
+  --text-title--line-height: var(--leading-tight);
+  --text-display: var(--text-display);
+  --text-display--line-height: var(--leading-tight);
+  --leading-tight: var(--leading-tight);
+  --leading-snug: var(--leading-snug);
+  --leading-normal: var(--leading-normal);
+  --leading-relaxed: var(--leading-relaxed);
+  --tracking-tight: var(--tracking-tight);
+  --tracking-label: var(--tracking-label);
+
+  /*
+   * A escala de raio do Tailwind colapsa no raio único do sistema: qualquer
+   * `rounded-*` resolve para o mesmo valor, então uma escala não volta por
+   * engano numa classe distraída.
+   */
+  --radius-xs: var(--radius);
+  --radius-sm: var(--radius);
+  --radius-md: var(--radius);
+  --radius-lg: var(--radius);
+  --radius-xl: var(--radius);
+  --radius-2xl: var(--radius);
+  --radius-3xl: var(--radius);
 }
 
 @layer base {
@@ -76,7 +112,7 @@
   body {
     background-color: var(--surface);
     color: var(--text);
-    font-family: var(--font-sans);
+    font-family: var(--font-mono);
     font-size: var(--text-base);
     line-height: var(--leading-normal);
     -webkit-font-smoothing: antialiased;
@@ -90,11 +126,68 @@
   :focus-visible {
     outline: 2px solid var(--focus-ring);
     outline-offset: 2px;
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius);
   }
 
   ::selection {
     background-color: var(--accent);
     color: var(--accent-foreground);
+  }
+}
+
+@layer components {
+  /*
+   * Título de seção no vocabulário de terminal: prefixo `// ` em tom
+   * secundário. O prefixo vem de um pseudo-elemento, então fica fora da
+   * árvore de acessibilidade — um leitor de tela anuncia só o título.
+   */
+  .section-title {
+    font-size: var(--text-xs);
+    font-weight: 600;
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .section-title::before {
+    content: "// ";
+    color: var(--border-interactive);
+    font-weight: 400;
+  }
+
+  /*
+   * Marcador `▸` em acento no lugar do bullet padrão. Mesma razão para o
+   * pseudo-elemento: o marcador é ornamento, não conteúdo.
+   */
+  .bullet-arrow {
+    position: relative;
+    padding-left: 1.5ch;
+    list-style: none;
+  }
+
+  .bullet-arrow::before {
+    content: "▸";
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+  }
+
+  /* Três dots de janela de terminal, à esquerda do header. */
+  .terminal-dots {
+    display: flex;
+    gap: var(--space-3xs);
+  }
+
+  .terminal-dots i {
+    width: 0.6rem;
+    height: 0.6rem;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    background: var(--surface-raised);
+  }
+
+  /* Números que o usuário compara entre linhas alinham em coluna. */
+  .tabular {
+    font-variant-numeric: tabular-nums;
   }
 }

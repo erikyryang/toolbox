@@ -21,7 +21,7 @@ import { useLanguage } from "@/lib/language";
 
 /** Altura mínima menor no mobile: com os painéis empilhados, uma caixa de
  * entrada alta e vazia empurraria a resposta para fora da tela. */
-const PANEL_BOX = "min-h-32 w-full rounded-xl border bg-surface-raised p-4 font-mono text-sm leading-relaxed md:min-h-64";
+const PANEL_BOX = "min-h-32 w-full rounded-md border bg-surface-raised p-4 text-sm leading-relaxed md:min-h-64";
 
 const SYNTAX_CLASS: Record<TokenKind, string> = {
   key: "text-syntax-key",
@@ -60,7 +60,7 @@ export function TextPanel({
   const id = useId();
   const labelId = `${id}-label`;
   const highlighted = readOnly && syntax !== undefined && value !== "";
-  const labelClass = "text-xs uppercase tracking-wide text-text-muted";
+  const labelClass = "section-title";
 
   return (
     <section className="flex min-w-0 flex-col gap-2">
@@ -86,13 +86,13 @@ export function TextPanel({
             </>
           ) : onClear && value !== "" ? (
             <Button
-              variant="ghost"
-              size="sm"
+              variant="chip"
+              size="chip"
               onClick={onClear}
               aria-label={language === "pt" ? "Limpar entrada" : "Clear input"}
             >
               <X aria-hidden />
-              <span className="text-xs">{language === "pt" ? "Limpar" : "Clear"}</span>
+              <span>{language === "pt" ? "Limpar" : "Clear"}</span>
             </Button>
           ) : null}
         </div>
@@ -168,14 +168,14 @@ function DownloadButton({
 
   return (
     <Button
-      variant="ghost"
-      size="sm"
+      variant="chip"
+      size="chip"
       onClick={download}
       disabled={value === ""}
       aria-label={language === "pt" ? "Baixar saída" : "Download output"}
     >
       <Download aria-hidden />
-      <span className="text-xs">{language === "pt" ? "Baixar" : "Download"}</span>
+      <span>{language === "pt" ? "Baixar" : "Download"}</span>
     </Button>
   );
 }

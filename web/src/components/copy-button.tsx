@@ -43,8 +43,8 @@ export function CopyButton({
 
   return (
     <Button
-      variant="ghost"
-      size="sm"
+      variant="chip"
+      size="chip"
       onClick={copy}
       disabled={value === ""}
       aria-label={
@@ -54,7 +54,7 @@ export function CopyButton({
       }
     >
       {copied ? <Check aria-hidden /> : <Copy aria-hidden />}
-      <span className="text-xs">
+      <span>
         {copied
           ? language === "pt" ? "Copiado" : "Copied"
           : language === "pt" ? "Copiar" : "Copy"}

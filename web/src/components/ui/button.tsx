@@ -6,10 +6,17 @@ import { cn } from "@/lib/utils";
 
 /**
  * Botão base, no formato do shadcn/ui mas escrito sobre os tokens semânticos.
- * O acento aparece só na variante `primary` — nenhuma outra ação o usa.
+ * O acento aparece só nas variantes `primary` e `chip` — nenhuma outra ação o
+ * usa.
+ *
+ * `chip` é o controle do cromo de terminal: caixa alta, tracking de rótulo,
+ * borda de 1px, e acento na borda e no texto quando está sob o ponteiro ou
+ * marcado com `aria-current`. Os controles que precisam dele já são botões ou
+ * links, então ele é variante e não componente próprio — assim herda foco,
+ * `disabled` e `asChild` sem repetição.
  */
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
@@ -18,10 +25,13 @@ const buttonVariants = cva(
         outline:
           "border border-border-interactive bg-transparent text-text hover:bg-surface-raised",
         ghost: "bg-transparent text-text-muted hover:bg-surface-raised hover:text-text",
+        chip:
+          "border border-border bg-transparent text-xs font-normal uppercase tracking-label text-text hover:border-accent hover:text-accent-text aria-[current]:border-accent aria-[current]:text-accent-text [&_svg]:size-3.5",
       },
       size: {
         sm: "h-8 px-3",
         md: "h-9 px-4",
+        chip: "h-7 px-2",
         icon: "size-8",
       },
     },
