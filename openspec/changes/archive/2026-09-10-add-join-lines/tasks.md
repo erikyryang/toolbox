@@ -9,7 +9,7 @@
 
 - [x] 2.1 Adicionar a entrada `juntar-linhas` em `web/src/lib/operations/format-catalog.ts`, entre `beautifier("json")` e `beautifier("xml")`, com `group: "Formato"`, `execution: "client"`, `kind` padrão de texto e sem `reverse`
 - [x] 2.2 Escrever título, subtítulo, descrição e os rótulos de `forward` em português, no tom das entradas existentes do catálogo
-- [x] 2.3 Declarar as opções: `separator` (`select`, padrão `comma-space`, sete escolhas), `trim` (`boolean`, padrão ligado) e `dropEmpty` (`boolean`, padrão ligado), cada booleana com `help` dizendo o que muda ao desligar
+- [x] 2.3 Declarar as opções: `separator` (`select`, padrão `none`, sete escolhas), `trim` (`boolean`, padrão desligado) e `dropEmpty` (`boolean`, padrão desligado), cada booleana com `help` dizendo o que muda ao alternar
 - [x] 2.4 Definir o `placeholder` com um exemplo de várias linhas que torne o efeito óbvio sem ler o subtítulo
 - [x] 2.5 Declarar os `aliases` de busca: `join`, `join lines`, `juntar`, `juntar linhas`, `unir linhas`, `uma linha`, `one line`, `remover quebras`
 - [x] 2.6 Registrar o motor em `web/src/lib/operations/registry.ts` sob o slug `juntar-linhas`, apenas com `forward`

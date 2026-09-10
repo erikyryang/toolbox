@@ -61,11 +61,22 @@ O motor faz `input.split(/\r\n|\r|\n/)` como primeiro passo, e a partir daí tra
 
 A ordem das etapas é fixa e importa: **separar → aparar (se ligado) → descartar vazias (se ligado) → juntar**. O aparo antes do descarte é o que faz uma linha de três espaços contar como vazia, que é o comportamento que a spec exige e o que a pessoa espera ao colar de uma planilha.
 
-### 6. Posição alfabética no grupo Formato
+### 6. Última posição no grupo Formato
 
-A entrada nasce entre `json-format` e `xml-format` no array exportado por `format-catalog.ts` — "JSON beautify", "Juntar linhas", "XML beautify" — mantendo o grupo em ordem alfabética pelo nome em português, como o grupo Codificação passou a ser.
+A entrada fica no fim do array exportado por `format-catalog.ts` — "JSON
+beautify", "XML beautify", "Juntar linhas" —, e não na posição alfabética que
+o grupo Codificação passou a seguir.
 
-**Nota honesta**: a ordem é a do array, e o array está em português; em inglês ("Join lines") a posição alfabética coincide, mas isso é sorte, não garantia. Ordenar por idioma em tempo de renderização é possível e não vale o custo agora — a ordem visível no fonte é uma propriedade que este catálogo escolheu manter.
+**Por quê**: os dois formatadores são o que a maioria vem buscar no grupo, e a
+junção de linhas é a vizinha de outra natureza — texto sem gramática, ao lado
+de dois formatos que têm uma. Ordem alfabética serve o grupo Codificação, onde
+as três entradas são a mesma coisa em bases diferentes e nenhuma tem
+precedência sobre as outras; aqui ela colocaria a estranha no meio das duas
+irmãs.
+
+**Efeito colateral bem-vindo**: a ordem deixa de depender do idioma do array.
+A posição alfabética de "Juntar linhas" e a de "Join lines" coincidiam por
+sorte, não por garantia — e agora não há sorte envolvida.
 
 ### 7. Tradução: entrada própria, fora da regra dos formatadores
 
@@ -76,8 +87,7 @@ A entrada nasce entre `json-format` e `xml-format` no array exportado por `forma
 - **Sete presets não cobrem o separador de alguém** → O caso é real (um ` | ` com espaços, um `", "` com aspas). Mitigação: os presets cobrem a grande maioria, e a decisão 2 deixa o caminho do campo livre aberto como adição futura, sem migração.
 - **Primeira operação de texto sem `reverse`; regressão silenciosa possível** → Um teste de interface na rota, além do teste de motor (decisão 3).
 - **Entrada muito grande recalculando a cada tecla** → O workspace já aplica debounce (`use-debounced.ts`) e a operação é `split`/`join`, linear e sem alocação extra relevante. Não se justifica worker aqui.
-- **Ordem alfabética do grupo depende do idioma do array** → Assumido explicitamente na decisão 6, não mitigado.
-- **Opção booleana com padrão ligado esconde comportamento** → Aparo e descarte ligados por padrão alteram a entrada sem que a pessoa peça. Mitigação: os dois têm `help` dizendo exatamente o que acontece quando desligados, no mesmo tom dos `help` já existentes no catálogo.
+- **Padrão que não transforma nada é menos "útil de cara"** → Separador vazio, sem aparo e sem descarte significa que a primeira impressão da tela é só "as quebras sumiram", e quem queria `a, b, c` precisa abrir as opções. É a troca deliberada: uma operação de texto não deve alterar o texto de quem chegou sem que a pessoa tenha pedido, e cada opção diz no `help` o que faz quando ligada.
 
 ## Migration Plan
 

@@ -1,5 +1,9 @@
-## ADDED Requirements
+# text-line-tools Specification
 
+## Purpose
+Operações de linha sobre texto livre — texto que, ao contrário de JSON e XML, não tem gramática. Cobre a junção de linhas em uma linha só.
+
+## Requirements
 ### Requirement: Junção de linhas em uma linha só
 O sistema SHALL oferecer, no grupo Formato, uma operação que recebe texto livre e devolve o mesmo conteúdo em uma única linha, unindo as linhas da entrada pelo separador escolhido. A operação SHALL ser executada integralmente no navegador, sem emitir nenhuma requisição carregando o conteúdo.
 
@@ -19,8 +23,15 @@ O sistema SHALL oferecer, no grupo Formato, uma operação que recebe texto livr
 - **WHEN** a junção é executada
 - **THEN** nenhuma requisição carregando o conteúdo é emitida e o rodapé indica processamento no navegador
 
+### Requirement: Padrão que não transforma nada
+Com as opções nos valores padrão, a operação SHALL apenas remover as quebras de linha: nenhum separador inserido, nenhum espaço aparado e nenhuma linha descartada. Toda transformação além disso SHALL ser uma escolha explícita de quem usa.
+
+#### Scenario: Entrada com espaços e linha vazia, nos padrões
+- **WHEN** a entrada `  a  `, uma linha vazia e `b` é processada sem tocar em nenhuma opção
+- **THEN** a saída é `  a  b`
+
 ### Requirement: Escolha do separador
-O sistema SHALL permitir escolher o separador inserido entre as linhas a partir de uma lista fixa de presets: nada, espaço, vírgula, vírgula + espaço, ponto e vírgula, pipe e tabulação. O padrão SHALL ser vírgula + espaço. O separador escolhido SHALL ser inserido apenas *entre* linhas, nunca antes da primeira nem depois da última.
+O sistema SHALL permitir escolher o separador inserido entre as linhas a partir de uma lista fixa de presets: nada, espaço, vírgula, vírgula + espaço, ponto e vírgula, pipe e tabulação. O padrão SHALL ser nenhum separador. O separador escolhido SHALL ser inserido apenas *entre* linhas, nunca antes da primeira nem depois da última.
 
 #### Scenario: Separador vazio
 - **WHEN** o separador escolhido é "nada" e a entrada tem `abc` e `def` em duas linhas
@@ -35,7 +46,7 @@ O sistema SHALL permitir escolher o separador inserido entre as linhas a partir 
 - **THEN** a saída não começa nem termina com o separador
 
 ### Requirement: Aparo de espaços por linha
-O sistema SHALL oferecer a opção de aparar os espaços em branco no início e no fim de cada linha antes da junção, ligada por padrão. Com a opção desligada, cada linha SHALL entrar na saída exatamente como está na entrada.
+O sistema SHALL oferecer a opção de aparar os espaços em branco no início e no fim de cada linha antes da junção, desligada por padrão. Com a opção desligada, cada linha SHALL entrar na saída exatamente como está na entrada.
 
 #### Scenario: Aparo ligado
 - **WHEN** a entrada tem `  nome  ` e `  idade` em duas linhas, com aparo ligado e separador vírgula + espaço
@@ -46,7 +57,7 @@ O sistema SHALL oferecer a opção de aparar os espaços em branco no início e 
 - **THEN** os espaços originais de cada linha aparecem na saída
 
 ### Requirement: Descarte de linhas vazias
-O sistema SHALL oferecer a opção de descartar as linhas vazias antes da junção, ligada por padrão. Com o aparo ligado, uma linha composta apenas de espaços SHALL contar como vazia. Com a opção desligada, cada linha vazia SHALL produzir um separador na saída.
+O sistema SHALL oferecer a opção de descartar as linhas vazias antes da junção, desligada por padrão. Com o aparo ligado, uma linha composta apenas de espaços SHALL contar como vazia. Com a opção desligada, cada linha vazia SHALL produzir um separador na saída.
 
 #### Scenario: Linha em branco no meio da lista
 - **WHEN** a entrada tem `a`, uma linha vazia e `b`, com descarte ligado e separador vírgula
@@ -99,3 +110,4 @@ A operação SHALL ter título, subtítulo, descrição, rótulos de sentido e r
 #### Scenario: Idioma inglês
 - **WHEN** o idioma selecionado é inglês
 - **THEN** título, subtítulo, rótulos e as escolhas do separador aparecem em inglês, sem cair no texto em português
+
