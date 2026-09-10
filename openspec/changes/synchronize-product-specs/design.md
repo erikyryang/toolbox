@@ -28,3 +28,9 @@ Publicar em PR próprio a partir da main atualizada. Manter a mudança ativa dur
 
 Nenhuma decisão de produto pendente. Detalhes de implementação serão resolvidos com base nos testes e registrados neste design quando materiais.
 
+## Evidências da consolidação
+
+- `trim-toolset`: os cenários de tar.zst, XZ e BZIP2 foram removidos por revisão explícita, pois já não existem no catálogo. O CLI recusou descartá-los automaticamente; após aplicar e validar os quatro deltas, o arquivo foi feito com `--skip-specs`.
+- `paper-terminal-aesthetic`: o cabeçalho de superfícies foi alinhado ao nome usado no delta antes da consolidação. O histórico original foi preservado. A base recebeu ainda a topbar com links pessoais, navegação responsiva, exceção circular dos dots, acento de navegação e título animado, conforme commits posteriores presentes na main.
+- `add-data-size-conversion`: os seis requisitos da capacidade e os dois de workspace foram consolidados. O Purpose gerado como TBD foi substituído por descrição concreta.
+- A configuração agora declara inglês como padrão. O README inclui a ferramenta de unidades e aponta para o procedimento de manutenção.

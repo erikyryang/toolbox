@@ -7,6 +7,8 @@ simple interface, browser-first processing, and no accounts or history.
 
 - **Encoding:** Base64, Base32, and Base58.
 - **Formats:** JSON and XML beautify/minify, and joining lines into one.
+- **Units:** convert data sizes between bit, byte, KB, MB, GB, and TB, with
+  an explicit decimal (1000) or binary (1024) base.
 - **Compression:** ZIP, GZIP, ZSTD, and TAR, plus extraction for ZIP, RAR, 7Z,
   GZIP, ZSTD, and TAR.
 - **Python escape hatch:** every compression screen hands out a standalone
@@ -259,6 +261,9 @@ go build ./cmd/toolbox-server
 ```
 
 ## Configuration
+
+The [specification maintenance guide](openspec/README.md) explains how to
+validate requirements and consolidate completed changes after integration.
 
 ### Frontend (build time)
 

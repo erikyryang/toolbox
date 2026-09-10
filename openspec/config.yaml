@@ -30,5 +30,7 @@ context: |
     - Specs, proposals, designs e comentários de código em português.
       Identificadores, mensagens de commit e o README raiz em inglês.
     - Commits no padrão conventional, com escopo (`feat(web):`, `refactor:`).
-    - A interface começa em português e alterna para inglês pelo cabeçalho;
+    - A interface começa em inglês e alterna para português pelo cabeçalho;
       toda operação nova precisa das duas traduções.
+    - Specs vigentes descrevem código integrado na main. Mudanças em PR ficam
+      em changes/; após integração, sincronizar os deltas, validar e arquivar.
