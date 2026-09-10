@@ -1,1 +1,4 @@
 /server/toolbox-server
+
+# Ignorados pelo Claude Code: preferências e permissões da máquina de cada um.
+.claude/settings.local.json
