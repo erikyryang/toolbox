@@ -8,6 +8,7 @@
  */
 
 import type { SyntaxLanguage } from "../highlight.ts";
+import type { Feedback } from "../messages.ts";
 
 export type OptionValue = string | boolean | number;
 export type OptionValues = Record<string, OptionValue>;
@@ -34,13 +35,13 @@ export type OptionSpec =
  * coisa, os avisos que explicam o quê. Avisos não são erro: a saída é válida,
  * mas o usuário precisa saber o que não sobreviveu à travessia.
  */
-export type EngineResult = string | { output: string; notes?: string[] };
+export type EngineResult = string | { output: string; notes?: Feedback[] };
 
 export type Engine = (input: string, options: OptionValues) => EngineResult;
 
 export function normalizeResult(result: EngineResult): {
   output: string;
-  notes: string[];
+  notes: Feedback[];
 } {
   return typeof result === "string"
     ? { output: result, notes: [] }
@@ -53,8 +54,8 @@ export type Direction = "forward" | "reverse";
 export type ProcessedOn = "client" | "server";
 
 export type OperationOutcome =
-  | { ok: true; output: string; processedOn: ProcessedOn; notes: string[] }
-  | { ok: false; error: string; position?: number; processedOn: ProcessedOn };
+  | { ok: true; output: string; processedOn: ProcessedOn; notes: Feedback[] }
+  | { ok: false; feedback: Feedback; position?: number; processedOn: ProcessedOn };
 
 export type OperationGroup = "Codificação" | "Formato" | "Compactação" | "Unidades";
 

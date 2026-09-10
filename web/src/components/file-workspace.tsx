@@ -2,6 +2,7 @@
 
 import { useCallback, useId, useState } from "react";
 import { Loader2, X } from "lucide-react";
+import { feedbackOf, localizeFeedback, message, type Feedback } from "@/lib/messages";
 
 import { FileInput } from "@/components/file-input";
 import { FileResults } from "@/components/file-results";
@@ -16,7 +17,6 @@ import type { SelectedFile } from "@/lib/compression/file-controller";
 import {
   COMPRESSIBLE_FORMATS,
   FORMATS,
-  PRESET_LABELS,
   clampLevel,
   levelForPreset,
   type FormatId,
@@ -69,22 +69,22 @@ export function FileWorkspace({
       ? optionValuesFor(initialFormat ?? "zip")
       : defaultOptionValues(operation),
   );
-  const { files, archive, detectedFormat, result, error: operationError, busy, controller } = useFileOperation();
+  const { files, archive, detectedFormat, result, feedback: operationError, busy, controller } = useFileOperation();
   const [dragging, setDragging] = useState(false);
   const [source, setSource] = useState<Source>("file");
   const [pasted, setPasted] = useState("");
-  const [pastedNote, setPastedNote] = useState<string | undefined>();
-  const [error, setError] = useState<string | undefined>();
+  const [pastedNote, setPastedNote] = useState<Feedback | undefined>();
+  const [error, setError] = useState<Feedback | undefined>();
   const visibleError = error ?? operationError;
 
   const inputId = useId();
   const pasteId = useId();
   const errorId = useId();
   const messages = {
-    unavailable: (decision: RoutingDecision) => backendUnavailable(decision, language),
-    read: language === "pt" ? "Falha ao ler o arquivo." : "Could not read the file.",
-    compress: language === "pt" ? "Falha ao compactar." : "Could not compress the files.",
-    extract: language === "pt" ? "Falha ao extrair." : "Could not extract the file.",
+    unavailable: () => message("en", "error.backendUnavailable"),
+    read: message("en", "error.unknown"),
+    compress: message("en", "error.unknown"),
+    extract: message("en", "error.unknown"),
   };
 
   const preset = (typeof options.preset === "string" ? options.preset : "balanced") as Preset;
@@ -125,9 +125,7 @@ export function FileWorkspace({
     controller.configure(kept);
     setError(
       dropping
-        ? language === "pt"
-          ? `${FORMATS[next].label} compacta um arquivo por vez — os outros foram dispensados e só "${kept[0].name}" continua selecionado.`
-          : `${FORMATS[next].label} compresses one file at a time — the others were dropped and only "${kept[0].name}" is still selected.`
+        ? { code: "note.filesDropped", params: { format: FORMATS[next].label, name: kept[0].name } }
         : undefined,
     );
   }
@@ -178,7 +176,7 @@ export function FileWorkspace({
     try {
       decoded = decodeArchiveText(pasted);
     } catch (failure) {
-      setError(failure instanceof Error ? failure.message : "Não foi possível ler o texto.");
+      setError(feedbackOf(failure));
       return;
     }
 
@@ -190,11 +188,10 @@ export function FileWorkspace({
       blob: new Blob([decoded.bytes.slice().buffer as ArrayBuffer]),
     };
 
-    setPastedNote(
-      language === "pt"
-        ? `Lido como ${TEXT_ENCODING_LABELS[decoded.encoding]}${decoded.dataUrl ? " dentro de um data: URL" : ""} — ${FORMATS[decoded.format].label}, ${formatBytes(selected.size)}.`
-        : `Read as ${TEXT_ENCODING_LABELS[decoded.encoding]}${decoded.dataUrl ? " inside a data: URL" : ""} — ${FORMATS[decoded.format].label}, ${formatBytes(selected.size)}.`,
-    );
+    setPastedNote({
+      code: decoded.dataUrl ? "note.pastedDataUrl" : "note.pasted",
+      params: { encoding: TEXT_ENCODING_LABELS[decoded.encoding], format: FORMATS[decoded.format].label, size: formatBytes(selected.size) },
+    });
     await controller.select([selected], true, messages, decoded.format);
   }
 
@@ -242,12 +239,12 @@ export function FileWorkspace({
         {compressing ? (
           <section className="flex flex-col gap-2">
             <h2 className="section-title">
-              {language === "pt" ? "Formato" : "Format"}
+              {message(language, "ui.format")}
             </h2>
             <div className="flex flex-wrap items-center gap-3">
               <div
                 role="group"
-                aria-label={language === "pt" ? "Formato de saída" : "Output format"}
+                aria-label={message(language, "ui.outputFormat")}
                 className="inline-flex flex-wrap rounded-md border border-border-interactive p-0.5"
               >
                 {COMPRESSIBLE_FORMATS.map((option) => {
@@ -272,13 +269,11 @@ export function FileWorkspace({
               </div>
               <p className="text-xs text-text-muted">
                 {FORMATS[format].container
-                  ? (language === "pt" ? "Guarda vários arquivos." : "Holds several files.")
-                  : (language === "pt" ? "Um arquivo por vez." : "One file at a time.")}
+                  ? (message(language, "ui.holdsSeveralFiles"))
+                  : (message(language, "ui.oneFileAtATime"))}
                 {FORMATS[format].levels
-                  ? (language === "pt"
-                      ? ` Nível ${FORMATS[format].levels.min}–${FORMATS[format].levels.max}.`
-                      : ` Level ${FORMATS[format].levels.min}–${FORMATS[format].levels.max}.`)
-                  : (language === "pt" ? " Sem compressão: só junta." : " No compression: it only bundles.")}
+                  ? message(language, "ui.levelRange", { min: FORMATS[format].levels.min, max: FORMATS[format].levels.max })
+                  : (message(language, "ui.noCompression"))}
               </p>
             </div>
           </section>
@@ -287,12 +282,12 @@ export function FileWorkspace({
         {!compressing ? (
           <section className="flex flex-col gap-2">
             <h2 className="section-title">
-              {language === "pt" ? "Origem" : "Source"}
+              {message(language, "ui.source")}
             </h2>
             <div className="flex flex-wrap items-center gap-3">
               <div
                 role="group"
-                aria-label={language === "pt" ? "Origem do arquivo" : "Where the archive comes from"}
+                aria-label={message(language, "ui.sourceGroup")}
                 className="inline-flex rounded-md border border-border-interactive p-0.5"
               >
                 {(["file", "text"] as Source[]).map((option) => {
@@ -311,18 +306,16 @@ export function FileWorkspace({
                       )}
                     >
                       {option === "file"
-                        ? (language === "pt" ? "Arquivo" : "File")
-                        : (language === "pt" ? "Texto" : "Text")}
+                        ? (message(language, "ui.file"))
+                        : (message(language, "ui.text"))}
                     </button>
                   );
                 })}
               </div>
               <p className="text-xs text-text-muted">
                 {source === "file"
-                  ? (language === "pt" ? "Escolhido do disco ou arrastado." : "Chosen from disk or dragged in.")
-                  : (language === "pt"
-                      ? "Base64, hexadecimal ou data: URL — a codificação é detectada."
-                      : "Base64, hex, or a data: URL — the encoding is detected.")}
+                  ? (message(language, "ui.sourceFileHint"))
+                  : (message(language, "ui.sourceTextHint"))}
               </p>
             </div>
           </section>
@@ -331,7 +324,7 @@ export function FileWorkspace({
         {source === "text" && !compressing ? (
           <section className="flex flex-col gap-3">
             <label htmlFor={pasteId} className="section-title">
-              {language === "pt" ? "Conteúdo codificado" : "Encoded contents"}
+              {message(language, "ui.encodedContents")}
             </label>
             <textarea
               id={pasteId}
@@ -353,15 +346,15 @@ export function FileWorkspace({
                 disabled={busy || pasted.trim() === ""}
               >
                 {busy ? <Loader2 aria-hidden className="animate-spin" /> : null}
-                <span>{language === "pt" ? "Abrir" : "Open"}</span>
+                <span>{message(language, "ui.open")}</span>
               </Button>
               {pasted !== "" ? (
                 <Button variant="ghost" size="sm" onClick={() => { setPasted(""); reset(); }}>
                   <X aria-hidden />
-                  <span>{language === "pt" ? "Limpar" : "Clear"}</span>
+                  <span>{message(language, "ui.clear")}</span>
                 </Button>
               ) : null}
-              {pastedNote ? <p className="text-xs text-text-muted">{pastedNote}</p> : null}
+              {pastedNote ? <p className="text-xs text-text-muted">{localizeFeedback(pastedNote, language)}</p> : null}
             </div>
           </section>
         ) : (
@@ -370,7 +363,7 @@ export function FileWorkspace({
 
         {visibleError ? (
           <p id={errorId} role="alert" className="text-sm text-danger">
-            {visibleError}
+            {localizeFeedback(visibleError, language)}
           </p>
         ) : null}
 
@@ -378,12 +371,12 @@ export function FileWorkspace({
           <section className="flex flex-wrap items-center gap-3">
             <Button variant="primary" size="md" onClick={runCompress} disabled={compressDisabled}>
               {busy ? <Loader2 aria-hidden className="animate-spin" /> : null}
-              <span>{language === "pt" ? "Compactar em" : "Compress to"} {FORMATS[format].label}</span>
+              <span>{message(language, "ui.compressTo")} {FORMATS[format].label}</span>
             </Button>
 
             {FORMATS[format].levels ? (
               <p className="text-xs text-text-muted">
-                {language === "pt" ? PRESET_LABELS[preset] : ({ fast: "Fast", balanced: "Balanced", max: "Maximum", custom: "Custom" }[preset])} — {language === "pt" ? "nível" : "level"} {level} {language === "pt" ? "de" : "of"} {FORMATS[format].levels.min}–
+                {message(language, `ui.preset.${preset}`)} — {message(language, "ui.level")} {level} {message(language, "ui.of")} {FORMATS[format].levels.min}–
                 {FORMATS[format].levels.max}
               </p>
             ) : null}
@@ -391,7 +384,7 @@ export function FileWorkspace({
             {busy ? (
               <Button variant="ghost" size="sm" onClick={reset}>
                 <X aria-hidden />
-                <span>{language === "pt" ? "Cancelar" : "Cancel"}</span>
+                <span>{message(language, "ui.cancel")}</span>
               </Button>
             ) : null}
           </section>
@@ -419,10 +412,4 @@ export function FileWorkspace({
  * para ele não tem para onde ir — e dizer isso é melhor do que oferecer um
  * botão que falha.
  */
-function backendUnavailable(routing: RoutingDecision, language: "pt" | "en"): string {
-  return language === "pt"
-    ? `Esta operação precisa do servidor (${routing.reason}), que ainda não está disponível. Enquanto isso, use um arquivo dentro do limite local ou outro formato.`
-    : `This operation needs the server (${routing.reason}), which is not available yet. Use a file within the local limit or another format.`;
-}
-
 export { clampLevel };

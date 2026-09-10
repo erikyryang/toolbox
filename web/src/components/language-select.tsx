@@ -1,12 +1,14 @@
 "use client";
 
+import { message } from "@/lib/messages";
+
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/lib/language";
 
 export function LanguageToggle() {
   const { language, setLanguage } = useLanguage();
   const next = language === "pt" ? "en" : "pt";
-  const label = language === "pt" ? "Mudar para inglês" : "Switch to Portuguese";
+  const label = message(language, "ui.switchLanguage");
 
   return (
     <Button

@@ -66,14 +66,12 @@ export async function compress({
   files,
 }: CompressInput): Promise<Uint8Array> {
   if (files.length === 0) {
-    throw new OperationError("Nenhum arquivo para compactar.");
+    throw new OperationError({ code: "error.noFiles" });
   }
 
   const spec = FORMATS[format];
   if (!spec.clientCompress) {
-    throw new OperationError(
-      `${spec.label} não é compactado no navegador — esta operação vai para o servidor.`,
-    );
+    throw new OperationError({ code: "error.serverFormat", params: { format: spec.label } });
   }
 
   const single = files[0];
@@ -101,9 +99,7 @@ export async function compress({
       return createTar(files.map(toTarEntry));
 
     default:
-      throw new OperationError(
-        `${spec.label} não tem compressor no navegador.`,
-      );
+      throw new OperationError({ code: "error.serverFormat", params: { format: spec.label } });
   }
 }
 
@@ -152,7 +148,7 @@ async function extractZipEntry(data: Uint8Array, entryName?: string): Promise<Ui
     const fail = (error: unknown) => {
       if (settled) return;
       settled = true;
-      reject(error instanceof Error ? error : new OperationError("Não foi possível extrair o ZIP."));
+      reject(error instanceof Error ? error : new OperationError({ code: "error.archive" }));
     };
 
     const unzip = new Unzip((file) => {
@@ -186,7 +182,7 @@ async function extractZipEntry(data: Uint8Array, entryName?: string): Promise<Ui
         unzip.push(data.subarray(offset, offset + 64 * 1024), offset + 64 * 1024 >= data.length);
       }
       if (!found && !settled) {
-        fail(new OperationError("A entrada pedida não existe no arquivo."));
+        fail(new OperationError({ code: "error.entry" }));
       }
     } catch (failure) {
       fail(failure);
@@ -231,25 +227,19 @@ export async function inspect(
   const format = detectFormat(data);
 
   if (!format) {
-    throw new OperationError(
-      `Formato não identificado. Os primeiros bytes são ${describeSignature(data)}, que não correspondem a nenhum formato suportado.`,
-    );
+    throw new OperationError({ code: "error.signature", params: { signature: describeSignature(data) } });
   }
 
   const spec = FORMATS[format];
   if (!spec.clientDecompress) {
-    throw new OperationError(
-      `${spec.label} não é lido no navegador — esta operação vai para o servidor.`,
-    );
+    throw new OperationError({ code: "error.serverFormat", params: { format: spec.label } });
   }
 
   if (format === "zip") {
     const entries = listZip(data);
     const encrypted = entries.find((entry) => entry.encrypted);
     if (encrypted) {
-      throw new OperationError(
-        "O ZIP tem entradas protegidas por senha, e arquivos criptografados não são suportados.",
-      );
+      throw new OperationError({ code: "error.encrypted" });
     }
 
     for (const entry of entries) {
@@ -343,7 +333,7 @@ export async function extract(
     : listing.find((item) => item.type === "file");
 
   if (!entry) {
-    throw new OperationError(`A entrada "${entryName}" não existe no arquivo.`);
+    throw new OperationError({ code: "error.entry" });
   }
 
   return extractTarEntry(source, entry);

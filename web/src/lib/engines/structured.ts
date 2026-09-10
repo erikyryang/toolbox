@@ -2,6 +2,7 @@ import { XMLBuilder, XMLParser, XMLValidator } from "fast-xml-parser";
 
 import type { Engine, OptionValues } from "../operations/types.ts";
 import { OperationError } from "./errors.ts";
+import type { Feedback } from "../messages.ts";
 
 /**
  * Beautify e minify de JSON e XML.
@@ -25,7 +26,8 @@ const XML_TEXT_NODE = "#text";
 const XML_ROOT = "root";
 const XML_ITEM = "item";
 
-type Parsed = { value: unknown; notes: string[] };
+type Parsed = { value: unknown; notes: Feedback[] };
+type Serialized = { output: string; notes: Feedback[] };
 
 // ---------------------------------------------------------------------------
 // Erros com posição
@@ -44,14 +46,10 @@ function jsonParseError(input: string, error: unknown): never {
   if (match) {
     const position = Number(match[1]);
     const { line, column } = lineColumnAt(input, position);
-    const reason = message.split(/ in JSON at position/)[0];
-    throw new OperationError(
-      `${reason} — linha ${line}, coluna ${column}.`,
-      position,
-    );
+    throw new OperationError({ code: "error.json", params: { line, column } }, position);
   }
 
-  throw new OperationError(`JSON inválido: ${message}`);
+  throw new OperationError({ code: "error.json" });
 }
 
 // ---------------------------------------------------------------------------
@@ -69,8 +67,9 @@ function parseJson(input: string): Parsed {
 function parseXml(input: string): Parsed {
   const validation = XMLValidator.validate(input, { allowBooleanAttributes: true });
   if (validation !== true) {
-    const { msg, line, col } = validation.err;
-    throw new OperationError(`${msg} — linha ${line}, coluna ${col}.`);
+    const { line, col } = validation.err;
+    const position = input.split("\n").slice(0, line - 1).reduce((sum, row) => sum + row.length + 1, 0) + col - 1;
+    throw new OperationError({ code: "error.xml", params: { line, column: col } }, position);
   }
 
   const parser = new XMLParser({
@@ -86,17 +85,13 @@ function parseXml(input: string): Parsed {
   });
 
   const value = parser.parse(input);
-  const notes: string[] = [];
+  const notes: Feedback[] = [];
 
   if (input.includes("=") && JSON.stringify(value).includes(`"${XML_ATTRIBUTE_PREFIX}`)) {
-    notes.push(
-      `Atributos XML viraram chaves com o prefixo "${XML_ATTRIBUTE_PREFIX}"; texto de elemento misto virou a chave "${XML_TEXT_NODE}".`,
-    );
+    notes.push({ code: "note.xmlAttributes", params: { prefix: XML_ATTRIBUTE_PREFIX, textKey: XML_TEXT_NODE } });
   }
   if (/xmlns(:[a-zA-Z0-9_-]+)?=/.test(input)) {
-    notes.push(
-      "Declarações de namespace viraram atributos comuns — a semântica de namespace não é preservada.",
-    );
+    notes.push({ code: "note.xmlNamespaces" });
   }
 
   return { value, notes };
@@ -124,28 +119,23 @@ function sortValue(value: unknown): unknown {
   return value;
 }
 
-function serializeJson(value: unknown, options: OptionValues): { output: string; notes: string[] } {
+function serializeJson(value: unknown, options: OptionValues): Serialized {
   const prepared = options.sortKeys === true ? sortValue(value) : value;
   const indent = options.minify === true ? undefined : indentOf(options);
   return { output: JSON.stringify(prepared, null, indent) ?? "null", notes: [] };
 }
 
-function serializeXml(value: unknown, options: OptionValues): { output: string; notes: string[] } {
-  const notes: string[] = [];
+function serializeXml(value: unknown, options: OptionValues): Serialized {
+  const notes: Feedback[] = [];
   let prepared = options.sortKeys === true ? sortValue(value) : value;
 
-  // XML precisa de um elemento raiz único; um array ou um escalar no topo não
-  // tem como virar documento sem que se invente um.
-  if (Array.isArray(prepared) || typeof prepared !== "object" || prepared === null) {
+  // XML precisa de um elemento raiz único; um array, um escalar ou um objeto
+  // com várias chaves no topo não vira documento sem que se invente uma.
+  const single = !Array.isArray(prepared) && typeof prepared === "object" && prepared !== null
+    && Object.keys(prepared as Record<string, unknown>).length === 1;
+  if (!single) {
+    notes.push({ code: "note.xmlRoot", params: { root: XML_ROOT } });
     prepared = { [XML_ROOT]: prepared };
-    notes.push(
-      `O valor no topo não é um objeto, então recebeu o elemento raiz <${XML_ROOT}>.`,
-    );
-  } else if (Object.keys(prepared as Record<string, unknown>).length !== 1) {
-    prepared = { [XML_ROOT]: prepared };
-    notes.push(
-      `O objeto tem mais de uma chave no topo e foi envolvido em <${XML_ROOT}>, porque um documento XML tem um único elemento raiz.`,
-    );
   }
 
   const builder = new XMLBuilder({
@@ -181,7 +171,7 @@ export function serializeFormat(
   format: Format,
   value: unknown,
   options: OptionValues,
-): { output: string; notes: string[] } {
+): Serialized {
   switch (format) {
     case "json":
       return serializeJson(value, options);

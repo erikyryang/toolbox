@@ -4,6 +4,7 @@ import type { Archive } from "@/lib/compression/codecs";
 import type { FileResult } from "@/lib/compression/file-controller";
 import { FORMATS } from "@/lib/compression/formats";
 import { formatBytes } from "@/lib/compression/limits";
+import { message } from "@/lib/messages";
 
 type Props = {
   archive?: Archive;
@@ -22,7 +23,7 @@ export function FileResults({ archive, result, busy, mode, totalSize, language, 
       {archive ? (
         <section className="flex flex-col gap-3">
           <h2 className="section-title">
-            {language === "pt" ? "Conteúdo" : "Contents"} ({FORMATS[archive.format].label})
+            {message(language, "ui.contents")} ({FORMATS[archive.format].label})
           </h2>
 
           <ul className="divide-y divide-border overflow-hidden rounded-md border border-border">
@@ -37,11 +38,11 @@ export function FileResults({ archive, result, busy, mode, totalSize, language, 
                 <span className="tabular shrink-0 text-xs text-text-muted">
                   {formatBytes(entry.size)}
                   {entry.compressedSize !== undefined
-                    ? language === "pt" ? ` · comprimido ${formatBytes(entry.compressedSize)}` : ` · compressed ${formatBytes(entry.compressedSize)}`
+                    ? message(language, "ui.compressedSize", { size: formatBytes(entry.compressedSize) })
                     : ""}
                 </span>
                 {entry.directory ? (
-                  <span className="text-xs text-text-muted">{language === "pt" ? "pasta" : "folder"}</span>
+                  <span className="text-xs text-text-muted">{message(language, "ui.folder")}</span>
                 ) : (
                   <Button
                     variant="outline"
@@ -49,7 +50,7 @@ export function FileResults({ archive, result, busy, mode, totalSize, language, 
                     onClick={() => onExtract(archive.single ? undefined : entry.name)}
                     disabled={busy}
                   >
-                    {language === "pt" ? "Extrair" : "Extract"}
+                    {message(language, "ui.extract")}
                   </Button>
                 )}
               </li>
@@ -62,12 +63,12 @@ export function FileResults({ archive, result, busy, mode, totalSize, language, 
         <section className="flex flex-wrap items-center gap-3 border-t border-border pt-4">
           <Button variant="primary" size="md" onClick={onDownload}>
             <Download aria-hidden />
-            <span>{language === "pt" ? "Baixar" : "Download"} {result.name}</span>
+            <span>{message(language, "ui.download")} {result.name}</span>
           </Button>
           <p className="tabular text-xs text-text-muted">
             {formatBytes(result.bytes.length)}
             {mode === "compress" && totalSize > 0
-              ? language === "pt" ? ` · ${Math.round((result.bytes.length / totalSize) * 100)}% do original` : ` · ${Math.round((result.bytes.length / totalSize) * 100)}% of original`
+              ? message(language, "ui.originalPercent", { percent: Math.round((result.bytes.length / totalSize) * 100) })
               : ""}
           </p>
         </section>

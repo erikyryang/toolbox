@@ -2,6 +2,9 @@ import { describe, expect, it, vi } from "vitest";
 import type { Archive } from "./codecs";
 import { DETECTION_PREFIX_BYTES, FileOperationController, type FileOperationDependencies, type SelectedFile } from "./file-controller";
 import { CLIENT_MAX_BYTES } from "./limits";
+import { OperationError } from "../engines/errors";
+import { localizeFeedback } from "../messages";
+import { failure } from "./backend";
 
 const archive: Archive = { format: "zip", single: false, entries: [{ name: "a.txt", size: 1, directory: false }] };
 const messages = { unavailable: () => "offline", read: "read", compress: "compress", extract: "extract" };
@@ -75,7 +78,7 @@ describe("file operation lifecycle", () => {
     read.resolve(new ArrayBuffer(4));
     await running;
     expect(local.compress).not.toHaveBeenCalled();
-    expect(controller.getSnapshot()).toEqual({ files: [], busy: false, archive: undefined, detectedFormat: undefined, result: undefined, error: undefined });
+    expect(controller.getSnapshot()).toEqual({ files: [], busy: false, archive: undefined, detectedFormat: undefined, result: undefined, error: undefined, feedback: undefined });
   });
 
   it.each(["resolve", "reject"] as const)("reset aborts HTTP and ignores a late %s", async (completion) => {
@@ -150,5 +153,50 @@ describe("file operation lifecycle", () => {
     pending.reject(new Error("cancelled"));
     await running;
     expect(controller.getSnapshot()).toMatchObject({ busy: false, result: undefined, error: undefined });
+  });
+});
+
+describe("file feedback survives language changes", () => {
+  it("preserves a local error's code, parameters and position without reading its sentence", async () => {
+    const { controller, local } = fixture();
+    local.inspect.mockRejectedValue(new OperationError({ code: "error.zipHeader", params: { offset: 42 }, position: 42 }));
+    const file = selected();
+    await controller.select([file], true, messages);
+    const snapshot = controller.getSnapshot();
+    expect(snapshot.feedback).toEqual({ code: "error.zipHeader", params: { offset: 42 }, position: 42 });
+    expect(localizeFeedback(snapshot.feedback, "en")).toContain("Invalid ZIP entry header at offset 42");
+    expect(localizeFeedback(snapshot.feedback, "pt")).toContain("Cabeçalho de entrada ZIP inválido no deslocamento 42");
+    expect(controller.getSnapshot()).toBe(snapshot);
+    expect(snapshot.files[0].blob).toBe(file.blob);
+    expect(local.inspect).toHaveBeenCalledTimes(1);
+    controller.configure();
+    expect(controller.getSnapshot().feedback).toBeUndefined();
+  });
+
+  it.each([413, 429, 503])("keeps HTTP %s and Retry-After in state for either language", async (status) => {
+    const { controller, dependencies } = fixture();
+    dependencies.compressOnServer.mockRejectedValue(failure(new Response("private remote detail", { status, headers: { "Retry-After": "30" } })));
+    const file = selected(CLIENT_MAX_BYTES + 1);
+    await controller.select([file], false, messages);
+    await controller.compress("zip", "balanced", 6, messages);
+    const feedback = controller.getSnapshot().feedback;
+    expect(feedback?.params).toEqual({ status, retryAfter: "30" });
+    expect(localizeFeedback(feedback, "en")).toContain("in 30 seconds");
+    expect(localizeFeedback(feedback, "pt")).toContain("em 30 segundos");
+    expect(localizeFeedback(feedback, "en")).not.toContain("private");
+    expect(file.blob.arrayBuffer).not.toHaveBeenCalled();
+  });
+
+  it("localizes an unavailable backend and an unknown error using stable codes", async () => {
+    const { controller, dependencies } = fixture();
+    dependencies.backendAvailable.mockReturnValue(false);
+    await controller.select([selected(CLIENT_MAX_BYTES + 1)], true, messages, "zip");
+    expect(controller.getSnapshot().feedback?.code).toBe("error.backendUnavailable");
+    expect(localizeFeedback(controller.getSnapshot().feedback, "pt")).toContain("não está disponível");
+    dependencies.backendAvailable.mockReturnValue(true);
+    dependencies.inspectOnServer.mockRejectedValue(new Error("sensitive server detail"));
+    await controller.select([selected(CLIENT_MAX_BYTES + 1)], true, messages, "zip");
+    expect(controller.getSnapshot().feedback?.code).toBe("error.unknown");
+    expect(localizeFeedback(controller.getSnapshot().feedback, "en")).not.toContain("sensitive");
   });
 });

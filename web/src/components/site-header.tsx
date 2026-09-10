@@ -1,5 +1,7 @@
 "use client";
 
+import { message } from "@/lib/messages";
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -44,7 +46,7 @@ export function SiteHeader() {
 
         <nav
           className="topbar-tabs"
-          aria-label={language === "pt" ? "navegação" : "navigation"}
+          aria-label={message(language, "ui.navigation")}
         >
           <Button asChild variant="tab" size="chip">
             <a href={site.home}>eriky-ryan</a>

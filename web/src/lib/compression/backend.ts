@@ -2,6 +2,8 @@
 
 import type { Archive } from "./codecs.ts";
 import type { FormatId } from "./formats.ts";
+import { OperationError } from "../engines/errors.ts";
+import type { Feedback } from "../messages.ts";
 
 /**
  * Cliente do backend de compactação.
@@ -18,27 +20,19 @@ export function backendAvailable(): boolean {
   return BACKEND_URL !== "";
 }
 
-type ErrorBody = { error?: string };
-
-async function failure(response: Response): Promise<Error> {
-  let message = `O servidor respondeu ${response.status}.`;
-  try {
-    const body = (await response.json()) as ErrorBody;
-    if (body.error) message = body.error;
-  } catch {
-    // Resposta sem JSON: a mensagem padrão já basta.
-  }
-
-  if (response.status === 413) {
-    return new Error(`${message} Tente um arquivo menor.`);
-  }
-  if (response.status === 429 || response.status === 503) {
-    const retry = response.headers.get("Retry-After");
-    return new Error(
-      `${message}${retry ? ` Tente de novo em ${retry} segundos.` : ""}`,
-    );
-  }
-  return new Error(message);
+/**
+ * O status é o contrato. A frase que o servidor manda no corpo vem no idioma
+ * dele, pode conter qualquer coisa e não é exibida — o código é escolhido
+ * aqui e traduzido na apresentação.
+ */
+export function failure(response: Response): OperationError {
+  const retryAfter = response.headers.get("Retry-After");
+  const feedback: Feedback = {
+    code: response.status === 413 ? "error.httpTooLarge"
+      : response.status === 429 || response.status === 503 ? "error.httpBusy" : "error.http",
+    params: { status: response.status, ...(retryAfter ? { retryAfter } : {}) },
+  };
+  return new OperationError(feedback);
 }
 
 function requestInit(body: BodyInit, signal?: AbortSignal): RequestInit {
@@ -75,7 +69,7 @@ export async function compressOnServer(
     `${BACKEND_URL}/v1/compress?${query}`,
     requestInit(form, signal),
   );
-  if (!response.ok) throw await failure(response);
+  if (!response.ok) throw failure(response);
 
   return new Uint8Array(await response.arrayBuffer());
 }
@@ -88,7 +82,7 @@ export async function inspectOnServer(
     `${BACKEND_URL}/v1/inspect`,
     requestInit(data, signal),
   );
-  if (!response.ok) throw await failure(response);
+  if (!response.ok) throw failure(response);
 
   const listing = (await response.json()) as {
     format: FormatId;
@@ -113,7 +107,7 @@ export async function extractOnServer(
     `${BACKEND_URL}/v1/extract${query}`,
     requestInit(data, signal),
   );
-  if (!response.ok) throw await failure(response);
+  if (!response.ok) throw failure(response);
 
   return new Uint8Array(await response.arrayBuffer());
 }

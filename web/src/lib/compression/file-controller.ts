@@ -3,6 +3,8 @@ import type { FormatId } from "./formats";
 import { FORMATS } from "./formats";
 import { detectFormat } from "./detect";
 import { decideRouting, type RoutingDecision } from "./limits";
+import { OperationError } from "../engines/errors";
+import { feedbackOf, type Feedback } from "../messages";
 
 export type SelectedFile = { name: string; size: number; blob: Blob };
 export type FileResult = { name: string; bytes: Uint8Array };
@@ -12,6 +14,7 @@ export type FileOperationState = {
   detectedFormat?: FormatId;
   result?: FileResult;
   error?: string;
+  feedback?: Feedback;
   busy: boolean;
 };
 
@@ -59,6 +62,8 @@ export class FileOperationController {
   };
 
   #publish(patch: Partial<FileOperationState>) {
+    // Keep the legacy diagnostic string while presentation consumes the code.
+    if (Object.hasOwn(patch, "error") && patch.error === undefined) patch.feedback = undefined;
     this.#state = { ...this.#state, ...patch };
     for (const listener of this.#listeners) listener();
   }
@@ -104,7 +109,7 @@ export class FileOperationController {
       if (!task.current()) return;
       this.#publish({ detectedFormat: format });
       const decision = decideRouting({ format: format ?? "zip", direction: "decompress", sizeBytes: file.size });
-      if (decision.where === "server" && !this.dependencies.backendAvailable()) throw new Error(messages.unavailable(decision));
+      if (decision.where === "server" && !this.dependencies.backendAvailable()) throw new OperationError({ code: "error.backendUnavailable" });
       let archive: Archive;
       if (decision.where === "server") {
         archive = await this.dependencies.inspectOnServer(file.blob, task.signal);
@@ -115,7 +120,7 @@ export class FileOperationController {
       }
       if (task.current()) this.#publish({ archive });
     } catch (failure) {
-      if (task.current()) this.#publish({ error: failure instanceof Error ? failure.message : messages.read });
+      if (task.current()) this.#publish({ error: failure instanceof Error ? failure.message : messages.read, feedback: feedbackOf(failure) });
     } finally {
       if (task.current()) this.#publish({ busy: false });
     }
@@ -130,7 +135,7 @@ export class FileOperationController {
       const decision = decideRouting({ format, direction: "compress", sizeBytes: files.reduce((sum, file) => sum + file.size, 0), level });
       let bytes: Uint8Array;
       if (decision.where === "server") {
-        if (!this.dependencies.backendAvailable()) throw new Error(messages.unavailable(decision));
+        if (!this.dependencies.backendAvailable()) throw new OperationError({ code: "error.backendUnavailable" });
         bytes = await this.dependencies.compressOnServer(format, preset, level, files.map((file) => ({ name: file.name, data: file.blob })), task.signal);
       } else {
         const payload = await Promise.all(files.map(async (file) => ({ name: file.name, data: await file.blob.arrayBuffer() })));
@@ -139,7 +144,7 @@ export class FileOperationController {
       }
       if (task.current()) this.#publish({ result: { name: `${files.length === 1 ? files[0].name : "arquivos"}${FORMATS[format].extension}`, bytes } });
     } catch (failure) {
-      if (task.current()) this.#publish({ error: failure instanceof Error ? failure.message : messages.compress });
+      if (task.current()) this.#publish({ error: failure instanceof Error ? failure.message : messages.compress, feedback: feedbackOf(failure) });
     } finally {
       if (task.current()) this.#publish({ busy: false });
     }
@@ -154,7 +159,7 @@ export class FileOperationController {
       const decision = decideRouting({ format: archive.format, direction: "decompress", sizeBytes: files[0].size });
       let bytes: Uint8Array;
       if (decision.where === "server") {
-        if (!this.dependencies.backendAvailable()) throw new Error(messages.unavailable(decision));
+        if (!this.dependencies.backendAvailable()) throw new OperationError({ code: "error.backendUnavailable" });
         bytes = await this.dependencies.extractOnServer(files[0].blob, entryName, task.signal);
       } else {
         const data = await files[0].blob.arrayBuffer();
@@ -163,7 +168,7 @@ export class FileOperationController {
       }
       if (task.current()) this.#publish({ result: { name: entryName?.split("/").pop() ?? archive.entries[0]?.name ?? files[0].name, bytes } });
     } catch (failure) {
-      if (task.current()) this.#publish({ error: failure instanceof Error ? failure.message : messages.extract });
+      if (task.current()) this.#publish({ error: failure instanceof Error ? failure.message : messages.extract, feedback: feedbackOf(failure) });
     } finally {
       if (task.current()) this.#publish({ busy: false });
     }

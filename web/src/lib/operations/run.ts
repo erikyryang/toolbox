@@ -1,4 +1,5 @@
 import { isOperationError } from "../engines/errors.ts";
+import { feedbackOf } from "../messages.ts";
 import {
   engineOf,
   normalizeResult,
@@ -31,21 +32,10 @@ export function runOperation(
     );
     return { ok: true, output, processedOn: "client", notes };
   } catch (error) {
-    if (isOperationError(error)) {
-      return {
-        ok: false,
-        error: error.message,
-        position: error.position,
-        processedOn: "client",
-      };
-    }
-
     return {
       ok: false,
-      error:
-        error instanceof Error
-          ? `A operação falhou: ${error.message}`
-          : "A operação falhou por um motivo inesperado.",
+      feedback: feedbackOf(error),
+      position: isOperationError(error) ? error.position : undefined,
       processedOn: "client",
     };
   }

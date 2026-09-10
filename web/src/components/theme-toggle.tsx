@@ -1,5 +1,7 @@
 "use client";
 
+import { message } from "@/lib/messages";
+
 import { useSyncExternalStore } from "react";
 
 import {
@@ -57,8 +59,8 @@ export function ThemeToggle() {
   }
 
   const label = theme === "dark"
-    ? (language === "pt" ? "Usar tema claro" : "Use light theme")
-    : (language === "pt" ? "Usar tema escuro" : "Use dark theme");
+    ? (message(language, "ui.useLightTheme"))
+    : (message(language, "ui.useDarkTheme"));
 
   return (
     <Button

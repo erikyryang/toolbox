@@ -28,14 +28,12 @@ function findEndOfCentralDirectory(view: DataView, bytes: Uint8Array): number {
   for (let offset = bytes.length - 22; offset >= start; offset -= 1) {
     if (view.getUint32(offset, true) === END_OF_CENTRAL_DIRECTORY) return offset;
   }
-  throw new OperationError(
-    "Fim do diretório central não encontrado: o arquivo não parece ser um ZIP válido (ou está truncado).",
-  );
+  throw new OperationError({ code: "error.zipDirectory" });
 }
 
 export function listZip(bytes: Uint8Array): ZipEntry[] {
   if (bytes.length < 22) {
-    throw new OperationError("O arquivo é curto demais para ser um ZIP.");
+    throw new OperationError({ code: "error.zipShort" });
   }
 
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
@@ -45,9 +43,7 @@ export function listZip(bytes: Uint8Array): ZipEntry[] {
   let offset = view.getUint32(eocd + 16, true);
 
   if (offset >= bytes.length) {
-    throw new OperationError(
-      "O diretório central aponta para fora do arquivo — provavelmente um ZIP64, ainda não suportado no navegador.",
-    );
+    throw new OperationError({ code: "error.zip64" });
   }
 
   const entries: ZipEntry[] = [];
@@ -55,9 +51,7 @@ export function listZip(bytes: Uint8Array): ZipEntry[] {
 
   for (let i = 0; i < count; i += 1) {
     if (view.getUint32(offset, true) !== CENTRAL_FILE_HEADER) {
-      throw new OperationError(
-        `Cabeçalho de entrada inválido no deslocamento ${offset} do diretório central.`,
-      );
+      throw new OperationError({ code: "error.zipHeader", params: { offset } });
     }
 
     const flags = view.getUint16(offset + 8, true);

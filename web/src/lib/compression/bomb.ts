@@ -32,9 +32,7 @@ export function createBombGuard(compressedSize: number): BombGuard {
       total += bytes;
 
       if (total > MAX_OUTPUT_BYTES) {
-        throw new OperationError(
-          `A extração passou de ${formatBytes(MAX_OUTPUT_BYTES)} de saída e foi interrompida.`,
-        );
+        throw new OperationError({ code: "error.outputLimit", params: { limit: formatBytes(MAX_OUTPUT_BYTES) } });
       }
 
       if (
@@ -42,9 +40,7 @@ export function createBombGuard(compressedSize: number): BombGuard {
         compressedSize > 0 &&
         total / compressedSize > MAX_EXPANSION_RATIO
       ) {
-        throw new OperationError(
-          `A extração expandiu mais de ${MAX_EXPANSION_RATIO}× o tamanho do arquivo (${formatBytes(compressedSize)} → ${formatBytes(total)}) e foi interrompida: isso é a assinatura de uma bomba de descompressão.`,
-        );
+        throw new OperationError({ code: "error.expansionLimit", params: { ratio: MAX_EXPANSION_RATIO } });
       }
     },
     total() {
@@ -62,9 +58,7 @@ export function assertDeclaredSizeIsSane(
   declaredUncompressed: number,
 ): void {
   if (declaredUncompressed > MAX_OUTPUT_BYTES) {
-    throw new OperationError(
-      `O arquivo declara ${formatBytes(declaredUncompressed)} de conteúdo extraído, acima do teto de ${formatBytes(MAX_OUTPUT_BYTES)}.`,
-    );
+    throw new OperationError({ code: "error.declaredLimit", params: { size: formatBytes(declaredUncompressed), limit: formatBytes(MAX_OUTPUT_BYTES) } });
   }
 
   if (
@@ -72,8 +66,6 @@ export function assertDeclaredSizeIsSane(
     compressedSize > 0 &&
     declaredUncompressed / compressedSize > MAX_EXPANSION_RATIO
   ) {
-    throw new OperationError(
-      `O arquivo declara expansão de ${Math.round(declaredUncompressed / compressedSize)}×, acima do limite de ${MAX_EXPANSION_RATIO}×: isso é a assinatura de uma bomba de descompressão.`,
-    );
+    throw new OperationError({ code: "error.expansionLimit", params: { ratio: MAX_EXPANSION_RATIO } });
   }
 }

@@ -1,5 +1,7 @@
 "use client";
 
+import { message } from "@/lib/messages";
+
 import { useState } from "react";
 import { ChevronRight, Terminal } from "lucide-react";
 
@@ -45,7 +47,6 @@ export function PythonScriptPanel({
   const decompressing = mode === "decompress";
   const active = decompressing ? chosen ?? format : format;
   const script = pythonScript(active, mode, level, language);
-  const pt = language === "pt";
 
   return (
     <details className="group rounded-md border border-border bg-surface-raised px-3 py-2.5">
@@ -55,20 +56,18 @@ export function PythonScriptPanel({
           className="size-3.5 transition-transform group-open:rotate-90"
         />
         <Terminal aria-hidden className="size-3.5" />
-        {pt ? "Script Python para rodar localmente" : "Python script to run locally"}
+        {message(language, "ui.pythonScriptTitle")}
       </summary>
 
       <div className="flex flex-col gap-4 pt-4">
         <p className="max-w-2xl text-xs text-text-muted">
-          {pt
-            ? "Faz a mesma coisa que esta tela, na sua máquina, sem limite de tamanho e sem passar por aqui. Copie, salve e rode."
-            : "Does what this screen does, on your own machine, with no size limit and without going through here. Copy it, save it, run it."}
+          {message(language, "ui.pythonScriptLead")}
         </p>
 
         {decompressing ? (
           <div
             role="group"
-            aria-label={pt ? "Formato do script" : "Script format"}
+            aria-label={message(language, "ui.scriptFormat")}
             className="inline-flex flex-wrap self-start rounded-md border border-border-interactive p-0.5"
           >
             {DECOMPRESSIBLE_FORMATS.map((option) => (
@@ -85,21 +84,19 @@ export function PythonScriptPanel({
         <ol className="flex list-decimal flex-col gap-1.5 pl-5 text-xs text-text-muted marker:text-text-muted">
           {script.requires ? (
             <li>
-              {pt ? "Instale a dependência:" : "Install the dependency:"}{" "}
+              {message(language, "ui.installTheDependency")}{" "}
               <code className="text-text">{script.requires}</code>
             </li>
           ) : null}
           <li>
-            {pt ? "Salve o script como" : "Save the script as"}{" "}
+            {message(language, "ui.saveTheScriptAs")}{" "}
             <code className="text-text">{script.filename}</code>
             {script.minPython
-              ? pt
-                ? ` — precisa do Python ${script.minPython} ou mais novo.`
-                : ` — needs Python ${script.minPython} or newer.`
+              ? message(language, "ui.pythonVersion", { version: script.minPython })
               : "."}
           </li>
           <li>
-            {pt ? "Rode:" : "Run it:"}{" "}
+            {message(language, "ui.runIt")}{" "}
             <code className="text-text">{script.usage}</code>
           </li>
         </ol>
@@ -109,7 +106,7 @@ export function PythonScriptPanel({
             <span className="text-xs text-text-muted">{script.filename}</span>
             <CopyButton
               value={script.code}
-              label={{ pt: "script Python", en: "Python script" }}
+              label={{ pt: message("pt", "ui.pythonScript"), en: message("en", "ui.pythonScript") }}
             />
           </div>
           <pre className="max-h-96 overflow-auto bg-surface px-3 py-3 text-xs leading-relaxed text-text">

@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { OperationError } from "./errors.ts";
+import { localizeFeedback, type Feedback } from "../messages.ts";
+import type { Language } from "../i18n.ts";
 import {
   convertDataSize,
   convertDataSizeBack,
@@ -17,8 +19,12 @@ function output(result: ReturnType<typeof convertDataSize>): string {
   return typeof result === "string" ? result : result.output;
 }
 
-function notes(result: ReturnType<typeof convertDataSize>): string[] {
+function notes(result: ReturnType<typeof convertDataSize>): Feedback[] {
   return typeof result === "string" ? [] : (result.notes ?? []);
+}
+
+function noteText(result: ReturnType<typeof convertDataSize>, language: Language): string[] {
+  return notes(result).map((note) => localizeFeedback(note, language));
 }
 
 describe("escada de unidades", () => {
@@ -135,19 +141,20 @@ describe("formatação", () => {
 describe("nota de convenção", () => {
   it("declara a base binária e o nome IEC do degrau", () => {
     const result = convertDataSize("1", options("gb", "mb", "1024"));
-    expect(notes(result)[0]).toContain("1024");
-    expect(notes(result)[0]).toContain("GB = GiB");
-    expect(notes(result)[0]).toContain("MB = MiB");
+    expect(notes(result)[0]).toEqual({ code: "note.binaryBase", params: { units: "GB = GiB, MB = MiB" } });
+    expect(noteText(result, "pt")[0]).toContain("1024");
   });
 
   it("declara a base decimal", () => {
     const result = convertDataSize("1", options("gb", "mb", "1000"));
-    expect(notes(result)[0]).toContain("1000");
+    expect(notes(result)[0]?.code).toBe("note.decimalBase");
+    expect(noteText(result, "en")[0]).toContain("1000");
   });
 
   it("não repete o degrau quando origem e destino são o mesmo", () => {
-    const note = notes(convertDataSize("1", options("gb", "gb", "1024")))[0];
-    expect(note).toBe("Base binária (1024): GB = GiB.");
+    const result = convertDataSize("1", options("gb", "gb", "1024"));
+    expect(notes(result)[0]?.params).toEqual({ units: "GB = GiB" });
+    expect(noteText(result, "pt")[0]).toBe("Base binária (1024): GB = GiB.");
   });
 
   it("não há nota quando a conversão é só entre bit e byte", () => {

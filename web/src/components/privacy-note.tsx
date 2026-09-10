@@ -1,3 +1,5 @@
+
+import { message } from "@/lib/messages";
 import type { ProcessedOn } from "@/lib/operations/types";
 import { useLanguage } from "@/lib/language";
 
@@ -10,7 +12,6 @@ import { useLanguage } from "@/lib/language";
  */
 export function PrivacyNote({
   processedOn,
-  reason,
 }: {
   processedOn: ProcessedOn;
   reason?: string;
@@ -19,16 +20,14 @@ export function PrivacyNote({
   if (processedOn === "client") {
     return (
       <p className="text-xs text-text-muted">
-        {language === "pt" ? "Processado no seu navegador, nada é enviado." : "Processed in your browser. Nothing is sent."}
+        {message(language, "ui.privacyLocal")}
       </p>
     );
   }
 
   return (
     <p className="text-xs text-text-muted">
-      {language === "pt"
-        ? <>Processado no servidor{reason ? ` — ${reason}` : ""}. O arquivo é descartado assim que a resposta termina; nada é armazenado.</>
-        : <>Processed on the server{reason ? ` — ${reason}` : ""}. The file is discarded as soon as the response ends; nothing is stored.</>}
+      {message(language, "privacy.server")}
     </p>
   );
 }

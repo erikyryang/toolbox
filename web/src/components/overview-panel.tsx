@@ -1,5 +1,7 @@
 "use client";
 
+import { message } from "@/lib/messages";
+
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowUpRight, Search } from "lucide-react";
@@ -36,10 +38,10 @@ export function OverviewPanel({
         </p>
         <TypedHeading
           className="mt-2 text-display font-bold leading-tight tracking-tight text-text"
-          text={language === "pt" ? "O que você quer fazer?" : "What would you like to do?"}
+          text={message(language, "ui.overviewTitle")}
         />
         <p className="mt-3 text-md text-text-muted">
-          {language === "pt" ? "Escolha uma ferramenta na barra lateral ou encontre uma por aqui." : "Choose a tool from the sidebar or find one here."}
+          {message(language, "ui.overviewLead")}
         </p>
       </header>
 
@@ -47,19 +49,19 @@ export function OverviewPanel({
           do texto acima: as duas caixas terminam na mesma borda. */}
       <label className="relative mt-8 block">
         <Search aria-hidden className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-text-muted" />
-        <span className="sr-only">{language === "pt" ? "Buscar ferramenta" : "Search tools"}</span>
+        <span className="sr-only">{message(language, "ui.searchTools")}</span>
         <input
           type="search"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder={language === "pt" ? "Buscar ferramenta" : "Search tools"}
+          placeholder={message(language, "ui.searchTools")}
           className="h-12 w-full rounded-md border border-border bg-surface-raised pl-11 pr-4 text-md text-text placeholder:text-text-muted focus:border-accent"
         />
       </label>
 
       {normalized === "" ? (
         <section className="mt-10">
-          <h2 className="section-title">{language === "pt" ? "Comece por aqui" : "Start here"}</h2>
+          <h2 className="section-title">{message(language, "ui.startHere")}</h2>
           <div className="mt-3 grid gap-3 sm:grid-cols-3">
             {quickActions.map((operation) => (
               <OperationCard key={operation.slug} operation={operation} />
@@ -72,7 +74,7 @@ export function OverviewPanel({
             <span className="tabular">
               {matches.reduce((total, { items }) => total + items.length, 0)}
             </span>{" "}
-            {language === "pt" ? "ferramentas encontradas" : "tools found"}
+            {message(language, "ui.toolsFound")}
           </h2>
           {matches.length > 0 ? (
             <div className="mt-4 flex flex-col gap-7">
@@ -90,13 +92,13 @@ export function OverviewPanel({
               })}
             </div>
           ) : (
-            <p className="mt-3 text-sm text-text-muted">{language === "pt" ? "Nenhuma ferramenta corresponde à busca." : "No tools match your search."}</p>
+            <p className="mt-3 text-sm text-text-muted">{message(language, "ui.noToolsFound")}</p>
           )}
         </section>
       )}
 
       <footer className="mt-14 border-t border-border pt-5 text-center text-sm text-text-muted">
-        {language === "pt" ? "Processamento local por padrão. Nada é salvo." : "Local processing by default. Nothing is saved."}
+        {message(language, "ui.privacyDefault")}
       </footer>
     </main>
   );
