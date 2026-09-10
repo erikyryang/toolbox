@@ -51,6 +51,10 @@ function beautifier(format: FormatId): OperationMeta {
     execution: "client",
     placeholder: PLACEHOLDERS[format],
     syntax: format,
+    aliases:
+      format === "json"
+        ? ["json", "beautify", "prettify", "formatar", "indentar", "minify", "minificar"]
+        : ["xml", "beautify", "prettify", "formatar", "indentar", "minify", "minificar"],
     forward: { label: "Beautify", inputLabel: label, outputLabel: `${label} formatado` },
     reverse: { label: "Minify", inputLabel: label, outputLabel: `${label} minificado` },
     options: [INDENT_OPTION, SORT_KEYS_OPTION],

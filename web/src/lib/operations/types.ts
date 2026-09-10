@@ -104,6 +104,11 @@ export type OperationMeta = {
    */
   syntax?: SyntaxLanguage;
   /**
+   * Termos alternativos pelos quais a busca deve encontrar esta operação —
+   * o que a pessoa digita ("unzip", "b64") raramente é o nome do produto.
+   */
+  aliases?: string[];
+  /**
    * Ações que preenchem a entrada com um valor gerado na hora. São
    * identificadores, não funções: o catálogo precisa atravessar o limite
    * servidor/cliente, e funções não atravessam.

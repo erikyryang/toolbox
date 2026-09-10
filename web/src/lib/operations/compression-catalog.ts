@@ -82,6 +82,7 @@ function compressOperation(format: FormatId): OperationMeta {
     group: "Compactação",
     kind: "file",
     execution: local ? "auto" : "auto",
+    aliases: [spec.label.toLowerCase(), spec.extension.replace(".", ""), "compactar", "comprimir", "compress", "zipar"],
     forward: {
       label: "Compactar",
       inputLabel: "Arquivos",
@@ -104,6 +105,10 @@ export const decompressOperation: OperationMeta = {
   group: "Compactação",
   kind: "file",
   execution: "auto",
+  aliases: [
+    "descompactar", "extrair", "abrir", "unzip", "gunzip", "untar",
+    "extract", "unarchive", "zip", "rar", "7z", "tar", "gzip", "zstd",
+  ],
   forward: {
     label: "Descompactar",
     inputLabel: "Arquivo",

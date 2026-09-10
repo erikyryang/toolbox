@@ -16,6 +16,7 @@ export const encodingOperationsPhase2: OperationMeta[] = [
     group: "Codificação",
     execution: "client",
     placeholder: "toolbox",
+    aliases: ["base32", "b32", "rfc 4648"],
     forward: { label: "Codificar", inputLabel: "Texto", outputLabel: "Base32" },
     reverse: { label: "Decodificar", inputLabel: "Base32", outputLabel: "Texto" },
     options: [
@@ -38,6 +39,7 @@ export const encodingOperationsPhase2: OperationMeta[] = [
     group: "Codificação",
     execution: "client",
     placeholder: "toolbox",
+    aliases: ["base58", "b58", "bitcoin"],
     forward: { label: "Codificar", inputLabel: "Texto", outputLabel: "Base58" },
     reverse: { label: "Decodificar", inputLabel: "Base58", outputLabel: "Texto" },
     options: [],

@@ -21,16 +21,21 @@ export function OverviewPanel({
   const quickActions = groups
     .flatMap(({ items }) => items)
     .filter((operation) => quickSlugs.includes(operation.slug));
+  const locale = language === "pt" ? "pt-BR" : "en";
   const matches = useMemo(
     () => groups.map(({ group, items }) => ({
       group,
-      items: items.filter((operation) =>
-        `${localizeOperation(operation, language).name} ${localizeOperation(operation, language).title} ${localizeOperation(operation, language).subtitle}`
-          .toLocaleLowerCase(language === "pt" ? "pt-BR" : "en")
-          .includes(normalized),
-      ),
+      items: items.filter((operation) => {
+        const localized = localizeOperation(operation, language);
+        // Os aliases entram na busca porque quem procura digita "unzip" ou
+        // "b64", quase nunca o nome que a ferramenta usa.
+        return [localized.name, localized.title, localized.subtitle, ...(operation.aliases ?? [])]
+          .join(" ")
+          .toLocaleLowerCase(locale)
+          .includes(normalized);
+      }),
     })).filter(({ items }) => items.length > 0),
-    [groups, language, normalized],
+    [groups, language, locale, normalized],
   );
 
   return (
