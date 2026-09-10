@@ -77,7 +77,11 @@ function parseXml(input: string): Parsed {
     ignoreAttributes: false,
     attributeNamePrefix: XML_ATTRIBUTE_PREFIX,
     textNodeName: XML_TEXT_NODE,
-    parseAttributeValue: true,
+    // Atributos permanecem texto. Convertê-los para tipos JS apagava conteúdo
+    // na volta: `a="true"` virava o atributo booleano `a`, e `a="01"` perdia o
+    // zero à esquerda ao voltar como número. Um formatador que promete não
+    // alterar o conteúdo não pode reinterpretá-lo.
+    parseAttributeValue: false,
     trimValues: true,
   });
 
@@ -152,6 +156,9 @@ function serializeXml(value: unknown, options: OptionValues): { output: string; 
     indentBy: typeof indentOf(options) === "string" ? "\t" : " ".repeat(Number(indentOf(options))),
     arrayNodeName: XML_ITEM,
     suppressEmptyNode: true,
+    // Ligado (o padrão da biblioteca), isto reescreve `a="true"` como `a`.
+    // É uma abreviação válida em HTML, não em XML — e some com o valor.
+    suppressBooleanAttributes: false,
   });
 
   return { output: String(builder.build(prepared)).trimEnd(), notes };

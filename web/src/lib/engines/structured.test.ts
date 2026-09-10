@@ -48,6 +48,31 @@ describe("beautify e minify", () => {
   });
 });
 
+describe("fidelidade dos atributos XML", () => {
+  // "sem alterar o conteúdo" é o que a operação promete no subtítulo; estes
+  // casos são os que a quebravam ao converter atributo em tipo JS.
+  it.each([
+    '<r a="true"/>',
+    '<r a="false"/>',
+    '<r a="01"/>',
+    '<r a="1"/>',
+    '<r a="1.50"/>',
+    '<r a="0x1f"/>',
+    '<r a="texto"/>',
+    '<r a=""/>',
+  ])("preserva o valor literal em %s", (source) => {
+    expect(out(minifyXml(source, {}))).toBe(source);
+  });
+
+  it("preserva o valor ao reindentar um documento com vários atributos", () => {
+    const source = '<r a="true" b="01" c="x"><f d="false"/></r>';
+    const formatted = out(beautifyXml(source, {}));
+    for (const literal of ['a="true"', 'b="01"', 'c="x"', 'd="false"']) {
+      expect(formatted).toContain(literal);
+    }
+  });
+});
+
 describe("avisos de leitura com perda", () => {
   it("avisa sobre a convenção usada para atributos XML", () => {
     const result = beautifyXml('<r a="1"><b>x</b></r>', {});
