@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { CompressionRoute } from "@/components/compression-route";
 import { OperationWorkspace } from "@/components/operation-workspace";
 import { operationMetaBySlug, operationSlugs } from "@/lib/operations/catalog";
+import { localizeOperation } from "@/lib/i18n";
 
 /**
  * Uma rota dedicada por operação.
@@ -22,9 +23,13 @@ export async function generateMetadata({
   params,
 }: PageProps<"/[operation]">): Promise<Metadata> {
   const { operation: slug } = await params;
-  const operation = operationMetaBySlug(slug);
+  const meta = operationMetaBySlug(slug);
 
-  if (!operation) return {};
+  if (!meta) return {};
+
+  // Os metadados são renderizados no servidor, que não conhece a preferência
+  // de quem vai ler — então seguem o idioma padrão do produto.
+  const operation = localizeOperation(meta, "en");
 
   return {
     title: operation.title,

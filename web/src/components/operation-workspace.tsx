@@ -151,6 +151,10 @@ function Workspace({ operation }: { operation: Operation }) {
           </div>
         ) : null}
 
+        {active.help ? (
+          <p className="max-w-2xl text-xs text-text-muted">{active.help}</p>
+        ) : null}
+
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <div className="flex flex-col gap-2">
             <TextPanel
@@ -199,7 +203,7 @@ function Workspace({ operation }: { operation: Operation }) {
           />
         </div>
 
-        <footer className="mt-6 border-t border-border pt-4">
+        <footer className="mt-6 border-t border-border pt-4 text-center">
           <PrivacyNote processedOn={outcome.processedOn} />
         </footer>
       </div>

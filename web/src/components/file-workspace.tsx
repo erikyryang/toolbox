@@ -5,6 +5,7 @@ import { Download, Loader2, Upload, X } from "lucide-react";
 
 import { AdvancedOptions } from "@/components/advanced-options";
 import { PrivacyNote } from "@/components/privacy-note";
+import { PythonScriptPanel } from "@/components/python-script";
 import { Button } from "@/components/ui/button";
 import {
   backendAvailable,
@@ -612,7 +613,9 @@ export function FileWorkspace({
 
         <AdvancedOptions options={levelOptions} values={options} onChange={setOption} />
 
-        <footer className="mt-2 border-t border-border pt-4">
+        <PythonScriptPanel mode={compressing ? "compress" : "decompress"} format={activeFormat} level={level} />
+
+        <footer className="mt-2 border-t border-border pt-4 text-center">
           <PrivacyNote
             processedOn={routing.where === "server" ? "server" : "client"}
             reason={routing.reason}
