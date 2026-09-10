@@ -15,6 +15,7 @@ import {
 import { CompressionClient } from "@/lib/compression/client";
 import type { Archive } from "@/lib/compression/codecs";
 import {
+  COMPRESSIBLE_FORMATS,
   FORMATS,
   PRESET_LABELS,
   clampLevel,
@@ -23,6 +24,7 @@ import {
   type Preset,
 } from "@/lib/compression/formats";
 import { detectFormat } from "@/lib/compression/detect";
+import { levelOptionsFor } from "@/lib/operations/compression-catalog";
 import { CLIENT_MAX_BYTES, decideRouting, formatBytes, type RoutingDecision } from "@/lib/compression/limits";
 import type { OperationMeta, OptionValue, OptionValues } from "@/lib/operations/types";
 import { defaultOptionValues } from "@/lib/operations/types";
@@ -30,6 +32,13 @@ import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/language";
 
 type Mode = "compress" | "decompress";
+
+/** Valores padrão das opções de nível de um formato. */
+function optionValuesFor(format: FormatId): OptionValues {
+  const values: OptionValues = {};
+  for (const option of levelOptionsFor(format)) values[option.id] = option.default;
+  return values;
+}
 
 type Selected = { name: string; size: number; data: ArrayBuffer };
 
@@ -43,14 +52,22 @@ type Selected = { name: string; size: number; data: ArrayBuffer };
 export function FileWorkspace({
   operation,
   mode,
-  format,
+  initialFormat,
 }: {
   operation: OperationMeta;
   mode: Mode;
-  format?: FormatId;
+  /** Formato pré-escolhido pela rota de entrada; só semeia o estado. */
+  initialFormat?: FormatId;
 }) {
   const { language } = useLanguage();
-  const [options, setOptions] = useState<OptionValues>(() => defaultOptionValues(operation));
+  // Ao compactar, o formato é escolha do usuário e vive aqui. Ao descompactar
+  // ele nunca é escolhido: quem decide é a assinatura do arquivo.
+  const [format, setFormat] = useState<FormatId>(initialFormat ?? "zip");
+  const [options, setOptions] = useState<OptionValues>(() =>
+    mode === "compress"
+      ? optionValuesFor(initialFormat ?? "zip")
+      : defaultOptionValues(operation),
+  );
   const [files, setFiles] = useState<Selected[]>([]);
   const [archive, setArchive] = useState<Archive | undefined>();
   const [detectedFormat, setDetectedFormat] = useState<FormatId | undefined>();
@@ -75,9 +92,15 @@ export function FileWorkspace({
 
   const preset = (typeof options.preset === "string" ? options.preset : "balanced") as Preset;
   const customLevel = Number(options.level ?? 6);
-  const activeFormat: FormatId = format ?? detectedFormat ?? archive?.format ?? "zip";
-  const level = format ? levelForPreset(format, preset, customLevel) : 0;
+  const compressing = mode === "compress";
+  const activeFormat: FormatId = compressing
+    ? format
+    : detectedFormat ?? archive?.format ?? "zip";
+  const level = compressing ? levelForPreset(format, preset, customLevel) : 0;
   const totalSize = files.reduce((sum, file) => sum + file.size, 0);
+  // As opções seguem o formato ativo, não a rota: o range de nível do ZSTD
+  // (1–22) não é o do GZIP (1–9).
+  const levelOptions = compressing ? levelOptionsFor(format) : operation.options;
 
   const routing: RoutingDecision = decideRouting({
     format: activeFormat,
@@ -86,7 +109,33 @@ export function FileWorkspace({
     level,
   });
 
-  const acceptsMany = mode === "compress" && !!format && FORMATS[format].container;
+  const acceptsMany = compressing && FORMATS[format].container;
+
+  /**
+   * Trocar de formato preserva o preset — ele quer dizer a mesma coisa em
+   * todos —, mas refaz o nível exato, que é medido no range do formato.
+   *
+   * Se o novo formato guarda um arquivo só e havia vários escolhidos, o
+   * excedente é dispensado com aviso: descartar em silêncio seria pior.
+   */
+  function changeFormat(next: FormatId) {
+    if (next === format) return;
+    setFormat(next);
+    setResult(undefined);
+    setOptions((current) => ({ ...optionValuesFor(next), preset: current.preset ?? "balanced" }));
+
+    if (!FORMATS[next].container && files.length > 1) {
+      const kept = files[0];
+      setFiles([kept]);
+      setError(
+        language === "pt"
+          ? `${FORMATS[next].label} compacta um arquivo por vez — os outros foram dispensados e só "${kept.name}" continua selecionado.`
+          : `${FORMATS[next].label} compresses one file at a time — the others were dropped and only "${kept.name}" is still selected.`,
+      );
+    } else {
+      setError(undefined);
+    }
+  }
 
   const setOption = useCallback((id: string, value: OptionValue) => {
     setOptions((current) => ({ ...current, [id]: value }));
@@ -166,7 +215,7 @@ export function FileWorkspace({
   }
 
   async function runCompress() {
-    if (!format || files.length === 0) return;
+    if (files.length === 0) return;
 
     if (routing.where === "server" && !backendAvailable()) {
       setError(backendUnavailable(routing, language));
@@ -237,6 +286,51 @@ export function FileWorkspace({
       </header>
 
       <div className="mt-10 flex flex-col gap-6">
+        {compressing ? (
+          <section className="flex flex-col gap-2">
+            <h2 className="text-xs uppercase tracking-wide text-text-muted">
+              {language === "pt" ? "Formato" : "Format"}
+            </h2>
+            <div className="flex flex-wrap items-center gap-3">
+              <div
+                role="group"
+                aria-label={language === "pt" ? "Formato de saída" : "Output format"}
+                className="inline-flex flex-wrap rounded-lg border border-border-interactive p-0.5"
+              >
+                {COMPRESSIBLE_FORMATS.map((option) => {
+                  const current = option === format;
+                  return (
+                    <button
+                      key={option}
+                      type="button"
+                      aria-pressed={current}
+                      onClick={() => changeFormat(option)}
+                      className={cn(
+                        "rounded-md px-3 py-1 text-sm transition-colors",
+                        current
+                          ? "bg-accent-solid font-medium text-accent-foreground"
+                          : "text-text-muted hover:text-text",
+                      )}
+                    >
+                      {FORMATS[option].label}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-xs text-text-muted">
+                {FORMATS[format].container
+                  ? (language === "pt" ? "Guarda vários arquivos." : "Holds several files.")
+                  : (language === "pt" ? "Um arquivo por vez." : "One file at a time.")}
+                {FORMATS[format].levels
+                  ? (language === "pt"
+                      ? ` Nível ${FORMATS[format].levels.min}–${FORMATS[format].levels.max}.`
+                      : ` Level ${FORMATS[format].levels.min}–${FORMATS[format].levels.max}.`)
+                  : (language === "pt" ? " Sem compressão: só junta." : " No compression: it only bundles.")}
+              </p>
+            </div>
+          </section>
+        ) : null}
+
         <section className="flex flex-col gap-3">
           <label
             htmlFor={inputId}
@@ -306,10 +400,10 @@ export function FileWorkspace({
           <section className="flex flex-wrap items-center gap-3">
             <Button variant="primary" size="md" onClick={runCompress} disabled={compressDisabled}>
               {busy ? <Loader2 aria-hidden className="animate-spin" /> : null}
-              <span>{language === "pt" ? "Compactar em" : "Compress to"} {format ? FORMATS[format].label : ""}</span>
+              <span>{language === "pt" ? "Compactar em" : "Compress to"} {FORMATS[format].label}</span>
             </Button>
 
-            {format && FORMATS[format].levels ? (
+            {FORMATS[format].levels ? (
               <p className="text-xs text-text-muted">
                 {language === "pt" ? PRESET_LABELS[preset] : ({ fast: "Fast", balanced: "Balanced", max: "Maximum", custom: "Custom" }[preset])} — {language === "pt" ? "nível" : "level"} {level} {language === "pt" ? "de" : "of"} {FORMATS[format].levels.min}–
                 {FORMATS[format].levels.max}
@@ -379,7 +473,7 @@ export function FileWorkspace({
           </section>
         ) : null}
 
-        <AdvancedOptions options={operation.options} values={options} onChange={setOption} />
+        <AdvancedOptions options={levelOptions} values={options} onChange={setOption} />
 
         <footer className="mt-2 border-t border-border pt-4">
           <PrivacyNote

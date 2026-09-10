@@ -6,9 +6,9 @@ import { ArrowUpRight, Archive, Braces, Code2, Search } from "lucide-react";
 
 import type { OperationGroup, OperationMeta } from "@/lib/operations/types";
 import { groupName, localizeOperation, useLanguage } from "@/lib/language";
+import { QUICK_START_SLUGS } from "@/lib/operations/catalog";
 
 const groupIcon = { Codificação: Code2, Formato: Braces, Compactação: Archive };
-const quickSlugs = ["base64", "json-format", "zip"];
 
 export function OverviewPanel({
   groups,
@@ -20,7 +20,7 @@ export function OverviewPanel({
   const normalized = query.trim().toLocaleLowerCase(language === "pt" ? "pt-BR" : "en");
   const quickActions = groups
     .flatMap(({ items }) => items)
-    .filter((operation) => quickSlugs.includes(operation.slug));
+    .filter((operation) => QUICK_START_SLUGS.includes(operation.slug));
   const locale = language === "pt" ? "pt-BR" : "en";
   const matches = useMemo(
     () => groups.map(({ group, items }) => ({

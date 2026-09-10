@@ -144,7 +144,12 @@ export function localizeOperation(operation: OperationMeta, language: Language):
   if (language === "pt") return operation;
   const translation = englishOperations[operation.slug];
   const isFormatter = /^(json|xml)-format$/.test(operation.slug);
-  const isCompression = operation.group === "Compactação" && operation.slug !== "descompactar";
+  // Só as rotas por formato entram na regra genérica "Compress to X"; as duas
+  // entradas canônicas têm texto próprio na tabela acima.
+  const isCompression =
+    operation.group === "Compactação" &&
+    operation.slug !== "compactar" &&
+    operation.slug !== "descompactar";
   const title = isCompression ? `Compress to ${operation.name}` : translation?.title ?? operation.title;
   const subtitle = isCompression
     ? `Compress files ${operation.slug === "zip" || operation.slug === "tar" ? "together " : ""}with level controls.`

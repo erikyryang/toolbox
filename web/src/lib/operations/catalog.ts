@@ -22,6 +22,7 @@ const encodingOperationsPhase1: OperationMeta[] = [
     group: "Codificação",
     execution: "client",
     placeholder: "toolbox",
+    aliases: ["base64", "b64", "atob", "btoa", "rfc 4648", "url-safe"],
     forward: { label: "Codificar", inputLabel: "Texto", outputLabel: "Base64" },
     reverse: { label: "Decodificar", inputLabel: "Base64", outputLabel: "Texto" },
     options: [
@@ -60,6 +61,13 @@ export const GROUP_ORDER: OperationGroup[] = [
   "Compactação",
 ];
 
+/**
+ * As três operações oferecidas na home antes de qualquer busca. Vive aqui, e
+ * não no componente, porque é dado de catálogo: um slug que saia da navegação
+ * some do "Comece por aqui" sem nenhum erro — e o teste cobre esse vínculo.
+ */
+export const QUICK_START_SLUGS = ["base64", "json-format", "compactar"];
+
 export function operationMetaBySlug(slug: string): OperationMeta | undefined {
   return operationCatalog.find((operation) => operation.slug === slug);
 }
@@ -68,12 +76,19 @@ export function operationSlugs(): string[] {
   return operationCatalog.map((operation) => operation.slug);
 }
 
+/**
+ * As operações agrupadas para a navegação. Rotas `unlisted` ficam de fora
+ * daqui — e só daqui: elas continuam no catálogo, e portanto continuam
+ * virando rota estática com metadados próprios.
+ */
 export function operationsByGroup(): {
   group: OperationGroup;
   items: OperationMeta[];
 }[] {
   return GROUP_ORDER.map((group) => ({
     group,
-    items: operationCatalog.filter((operation) => operation.group === group),
+    items: operationCatalog.filter(
+      (operation) => operation.group === group && !operation.unlisted,
+    ),
   })).filter((entry) => entry.items.length > 0);
 }

@@ -109,6 +109,12 @@ export type OperationMeta = {
    */
   aliases?: string[];
   /**
+   * Fora da navegação, mas ainda uma rota: existe, é indexável e tem
+   * metadados próprios. É como as páginas por formato de compactação
+   * sobrevivem sem inchar o menu.
+   */
+  unlisted?: boolean;
+  /**
    * Ações que preenchem a entrada com um valor gerado na hora. São
    * identificadores, não funções: o catálogo precisa atravessar o limite
    * servidor/cliente, e funções não atravessam.
