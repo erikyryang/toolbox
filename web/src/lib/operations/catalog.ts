@@ -1,6 +1,6 @@
 import { compressionOperations } from "./compression-catalog.ts";
 import { encodingOperationsPhase2 } from "./encoding-catalog.ts";
-import { formatPairOperations, formatterOperations } from "./format-catalog.ts";
+import { formatterOperations } from "./format-catalog.ts";
 import type { OperationGroup, OperationMeta } from "./types.ts";
 
 /**
@@ -50,7 +50,6 @@ const encodingOperationsPhase1: OperationMeta[] = [
 export const operationCatalog: OperationMeta[] = [
   ...encodingOperationsPhase1,
   ...encodingOperationsPhase2,
-  ...formatPairOperations,
   ...formatterOperations,
   ...compressionOperations,
 ];

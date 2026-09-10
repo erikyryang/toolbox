@@ -95,38 +95,36 @@ const englishOperations: Partial<Record<string, Partial<OperationMeta>>> = {
   },
   "json-format": { title: "JSON: beautify and minify" },
   "xml-format": { title: "XML: beautify and minify" },
+  compactar: {
+    name: "Compress",
+    title: "Compress files",
+    subtitle:
+      "Pick a format, gather the files, and download. ZIP and TAR hold several; GZIP and ZSTD, one at a time.",
+    description:
+      "ZIP, GZIP, ZSTD, and TAR compressor with level presets, processed in your browser. No accounts, history, or stored files.",
+    forward: { label: "Compress", inputLabel: "Files", outputLabel: "Archive" },
+  },
   descompactar: {
     name: "Extract",
     title: "Extract",
-    subtitle: "Open ZIP, TAR, GZIP, and XZ in your browser and inspect contents before extraction. ZSTD, BZIP2, RAR, and 7Z use the server.",
-    description: "Extractor for ZIP, RAR, 7Z, TAR, GZIP, ZSTD, XZ, and BZIP2, with entry listing and selective extraction.",
+    subtitle: "Open ZIP, TAR, and GZIP in your browser and inspect contents before extraction. ZSTD, RAR, and 7Z use the server.",
+    description: "Extractor for ZIP, RAR, 7Z, TAR, GZIP, and ZSTD, with entry listing and selective extraction.",
     forward: { label: "Extract", inputLabel: "Archive", outputLabel: "Contents" },
   },
 };
 
 const optionTranslations: Record<string, string> = {
   "Indentação": "Indentation", "2 espaços": "2 spaces", "4 espaços": "4 spaces", "Tabulação": "Tabs",
-  "Ordenar chaves": "Sort keys", "Delimitador": "Delimiter", "Vírgula": "Comma", "Ponto e vírgula": "Semicolon",
-  "Barra vertical": "Pipe", "Caractere de citação": "Quote character", "Aspas duplas": "Double quotes",
-  "Aspas simples": "Single quotes", "Primeira linha é cabeçalho": "First row is a header",
-  "Converter números e booleanos": "Convert numbers and booleans", "Alfabeto": "Alphabet",
+  "Ordenar chaves": "Sort keys", "Alfabeto": "Alphabet",
   "Padrão (RFC 4648 §4)": "Standard (RFC 4648 §4)", "Preenchimento com =": "Padding with =",
-  "Caixa dos dígitos": "Digit case", "Minúscula": "Lowercase", "Maiúscula": "Uppercase",
-  "Separador": "Separator", "Nenhum": "None", "Espaço a cada byte": "Space after each byte",
-  "Estilo": "Style", "Escapar apenas fora do ASCII": "Escape non-ASCII only", "Ordenar por chave": "Sort by key",
-  "Codificar em": "Encode as", "Ler como": "Read as", "Nível de compressão": "Compression level",
+  "Nível de compressão": "Compression level",
   "Nível exato": "Exact level", "Rápido": "Fast", "Equilibrado": "Balanced", "Máximo": "Maximum", "Customizado": "Custom",
 };
 
 const helpTranslations: Record<string, string> = {
   "Desligado, a ordem original das chaves é preservada.": "When off, the original key order is preserved.",
-  "Desligado, cada linha vira uma lista de valores em vez de um objeto.": "When off, each row becomes a list of values instead of an object.",
-  "Ligado, \"1\" vira 1 e \"true\" vira true na leitura do CSV.": "When on, \"1\" becomes 1 and \"true\" becomes true while reading CSV.",
   "O alfabeto URL-safe troca + e / por - e _.": "The URL-safe alphabet replaces + and / with - and _.",
   "Desligado, a saída não recebe os caracteres = do fim.": "When off, output does not include trailing = characters.",
-  "Só afeta a saída; na entrada, espaços são sempre tolerados.": "Only affects output; spaces are always accepted in input.",
-  "O charset usado para transformar o texto em bytes.": "The charset used to turn text into bytes.",
-  "O charset usado para ler esses bytes de volta como texto.": "The charset used to read those bytes back as text.",
   "Vale apenas com o preset Customizado.": "Only applies with the Custom preset.",
 };
 
@@ -145,31 +143,24 @@ function localizeOption(option: OptionSpec, language: Language): OptionSpec {
 export function localizeOperation(operation: OperationMeta, language: Language): OperationMeta {
   if (language === "pt") return operation;
   const translation = englishOperations[operation.slug];
-  const isFormatPair = /^(json|yaml|xml|csv)-(json|yaml|xml|csv)$/.test(operation.slug);
   const isFormatter = /^(json|xml)-format$/.test(operation.slug);
   const isCompression = operation.group === "Compactação" && operation.slug !== "descompactar";
   const title = isCompression ? `Compress to ${operation.name}` : translation?.title ?? operation.title;
   const subtitle = isCompression
     ? `Compress files ${operation.slug === "zip" || operation.slug === "tar" ? "together " : ""}with level controls.`
-    : isFormatPair
-      ? `Convert ${operation.name.replace(" ⇄ ", " to ")} and back, with warnings for values a format cannot represent.`
-      : isFormatter
-        ? `Format ${operation.name.replace(" beautify", "")} for readability or remove unnecessary whitespace without changing its contents.`
+    : isFormatter
+      ? `Format ${operation.name.replace(" beautify", "")} for readability or remove unnecessary whitespace without changing its contents.`
       : translation?.subtitle ?? operation.subtitle;
   const description = isCompression
     ? `${operation.name} compressor with level presets. No accounts, history, or stored files.`
-    : isFormatPair
-      ? `${operation.name.replace(" ⇄ ", " converter, ")} processed in your browser.`
-      : isFormatter
-        ? `${operation.name.replace(" beautify", "")} formatter and minifier with configurable indentation, processed in your browser.`
+    : isFormatter
+      ? `${operation.name.replace(" beautify", "")} formatter and minifier with configurable indentation, processed in your browser.`
       : translation?.description ?? operation.description;
   const direction = (value: OperationMeta["forward"] | undefined) => value;
   const forward = translation?.forward ?? (isCompression
     ? { label: "Compress", inputLabel: "Files", outputLabel: operation.name }
     : operation.forward);
-  const reverse = translation?.reverse ?? (isFormatPair
-    ? operation.reverse
-    : operation.reverse);
+  const reverse = translation?.reverse ?? operation.reverse;
   return {
     ...operation,
     group: operation.group,

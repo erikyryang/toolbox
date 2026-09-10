@@ -1,27 +1,22 @@
 import { XMLBuilder, XMLParser, XMLValidator } from "fast-xml-parser";
-import Papa from "papaparse";
-import { parseDocument, stringify as yamlStringify, visit } from "yaml";
 
-import type { Engine, EngineResult, OptionValues } from "../operations/types.ts";
+import type { Engine, OptionValues } from "../operations/types.ts";
 import { OperationError } from "./errors.ts";
 
 /**
- * Conversão entre JSON, YAML, XML e CSV.
+ * Beautify e minify de JSON e XML.
  *
- * Todos os pares passam por um mesmo pivô — um valor JavaScript comum. É o que
- * permite oferecer as doze direções com um único motor, e é também onde a
- * conversão perde informação: cada formato representa coisas que os outros não
- * têm. Onde isso acontece, o motor produz a melhor conversão possível e diz o
- * que ficou pelo caminho, em vez de falhar ou de calar.
+ * Os dois passam pelo mesmo pivô — um valor JavaScript comum — porque é o que
+ * permite reindentar e minificar com um único motor. Onde a leitura do XML
+ * precisa de uma convenção que o documento original não tinha, o motor diz o
+ * que fez, em vez de calar.
  */
 
-export type Format = "json" | "yaml" | "xml" | "csv";
+export type Format = "json" | "xml";
 
 export const FORMAT_LABELS: Record<Format, string> = {
   json: "JSON",
-  yaml: "YAML",
   xml: "XML",
-  csv: "CSV",
 };
 
 const XML_ATTRIBUTE_PREFIX = "@_";
@@ -71,41 +66,6 @@ function parseJson(input: string): Parsed {
   }
 }
 
-function parseYaml(input: string): Parsed {
-  const doc = parseDocument(input, { merge: true });
-
-  if (doc.errors.length > 0) {
-    const error = doc.errors[0];
-    const [line, column] = error.linePos
-      ? [error.linePos[0].line, error.linePos[0].col]
-      : [0, 0];
-    throw new OperationError(
-      line > 0
-        ? `${error.message.split("\n")[0]} — linha ${line}, coluna ${column}.`
-        : `YAML inválido: ${error.message.split("\n")[0]}`,
-      error.pos?.[0],
-    );
-  }
-
-  const notes: string[] = [];
-  let aliases = 0;
-  visit(doc, {
-    Alias() {
-      aliases += 1;
-    },
-  });
-  if (aliases > 0) {
-    notes.push(
-      `O documento usa ${aliases} alias(es) de âncora; eles foram expandidos, porque âncoras não existem nos outros formatos.`,
-    );
-  }
-  if (doc.commentBefore || doc.comment) {
-    notes.push("Comentários do YAML não sobrevivem à conversão.");
-  }
-
-  return { value: doc.toJS({ maxAliasCount: -1 }), notes };
-}
-
 function parseXml(input: string): Parsed {
   const validation = XMLValidator.validate(input, { allowBooleanAttributes: true });
   if (validation !== true) {
@@ -138,43 +98,6 @@ function parseXml(input: string): Parsed {
   return { value, notes };
 }
 
-function parseCsv(input: string, options: OptionValues): Parsed {
-  const delimiter = delimiterOf(options);
-  const header = options.header !== false;
-
-  const result = Papa.parse<Record<string, unknown> | unknown[]>(input.trim(), {
-    delimiter,
-    header,
-    quoteChar: quoteCharOf(options),
-    skipEmptyLines: true,
-    dynamicTyping: options.typed === true,
-  });
-
-  const fatal = result.errors.find((error) => error.type !== "FieldMismatch");
-  if (fatal) {
-    throw new OperationError(
-      `CSV inválido: ${fatal.message}${
-        typeof fatal.row === "number" ? ` — linha ${fatal.row + 1}.` : "."
-      }`,
-    );
-  }
-
-  const notes: string[] = [];
-  const mismatch = result.errors.find((error) => error.type === "FieldMismatch");
-  if (mismatch) {
-    notes.push(
-      `Alguma linha tem número de campos diferente do cabeçalho (a partir da linha ${
-        typeof mismatch.row === "number" ? mismatch.row + 1 : "?"
-      }).`,
-    );
-  }
-  if (!header) {
-    notes.push("Sem cabeçalho: cada linha virou uma lista de valores.");
-  }
-
-  return { value: result.data, notes };
-}
-
 // ---------------------------------------------------------------------------
 // Serialização por formato
 // ---------------------------------------------------------------------------
@@ -201,18 +124,6 @@ function serializeJson(value: unknown, options: OptionValues): { output: string;
   const prepared = options.sortKeys === true ? sortValue(value) : value;
   const indent = options.minify === true ? undefined : indentOf(options);
   return { output: JSON.stringify(prepared, null, indent) ?? "null", notes: [] };
-}
-
-function serializeYaml(value: unknown, options: OptionValues): { output: string; notes: string[] } {
-  const prepared = options.sortKeys === true ? sortValue(value) : value;
-  const indent = indentOf(options);
-  return {
-    output: yamlStringify(prepared, {
-      indent: typeof indent === "number" ? indent : 2,
-      lineWidth: 0,
-    }),
-    notes: [],
-  };
 }
 
 function serializeXml(value: unknown, options: OptionValues): { output: string; notes: string[] } {
@@ -246,93 +157,16 @@ function serializeXml(value: unknown, options: OptionValues): { output: string; 
   return { output: String(builder.build(prepared)).trimEnd(), notes };
 }
 
-/** Achata caminhos aninhados em colunas — a única forma de um objeto virar linha. */
-function flattenRow(
-  value: unknown,
-  prefix: string,
-  target: Record<string, unknown>,
-  flattened: { count: number },
-): void {
-  if (value === null || typeof value !== "object") {
-    target[prefix] = value;
-    return;
-  }
-
-  flattened.count += 1;
-  const entries = Array.isArray(value)
-    ? value.map((item, index) => [String(index), item] as const)
-    : Object.entries(value as Record<string, unknown>);
-
-  for (const [key, item] of entries) {
-    flattenRow(item, prefix === "" ? key : `${prefix}.${key}`, target, flattened);
-  }
-}
-
-function serializeCsv(value: unknown, options: OptionValues): { output: string; notes: string[] } {
-  const notes: string[] = [];
-  const rows = Array.isArray(value) ? value : [value];
-
-  if (!Array.isArray(value)) {
-    notes.push("O valor não era uma lista; virou uma única linha.");
-  }
-
-  const flattened = { count: 0 };
-  const prepared = rows.map((row) => {
-    if (row === null || typeof row !== "object") return { valor: row };
-    const target: Record<string, unknown> = {};
-    for (const [key, item] of Object.entries(row as Record<string, unknown>)) {
-      flattenRow(item, key, target, flattened);
-    }
-    return target;
-  });
-
-  if (flattened.count > 0) {
-    notes.push(
-      "Estruturas aninhadas foram achatadas em colunas com caminho pontilhado (ex.: endereco.cidade) — CSV não tem aninhamento.",
-    );
-  }
-
-  const columns = [...new Set(prepared.flatMap((row) => Object.keys(row)))];
-  const ordered = options.sortKeys === true ? [...columns].sort() : columns;
-
-  return {
-    output: Papa.unparse(prepared, {
-      columns: ordered,
-      delimiter: delimiterOf(options),
-      quoteChar: quoteCharOf(options),
-      header: options.header !== false,
-      newline: "\n",
-    }),
-    notes,
-  };
-}
-
-function delimiterOf(options: OptionValues): string {
-  const value = typeof options.delimiter === "string" ? options.delimiter : "comma";
-  if (value === "semicolon") return ";";
-  if (value === "tab") return "\t";
-  if (value === "pipe") return "|";
-  return ",";
-}
-
-function quoteCharOf(options: OptionValues): string {
-  return options.quoteChar === "single" ? "'" : '"';
-}
-
 // ---------------------------------------------------------------------------
 // Motor genérico
 // ---------------------------------------------------------------------------
 
-export function parseFormat(format: Format, input: string, options: OptionValues): Parsed {
+export function parseFormat(format: Format, input: string): Parsed {
   switch (format) {
     case "json":
       return parseJson(input);
-    case "yaml":
-      return parseYaml(input);
     case "xml":
       return parseXml(input);
-    case "csv":
-      return parseCsv(input, options);
   }
 }
 
@@ -344,42 +178,16 @@ export function serializeFormat(
   switch (format) {
     case "json":
       return serializeJson(value, options);
-    case "yaml":
-      return serializeYaml(value, options);
     case "xml":
       return serializeXml(value, options);
-    case "csv":
-      return serializeCsv(value, options);
   }
-}
-
-export function convert(
-  from: Format,
-  to: Format,
-  input: string,
-  options: OptionValues,
-): EngineResult {
-  if (input.trim() === "") return "";
-
-  const parsed = parseFormat(from, input, options);
-  const serialized = serializeFormat(to, parsed.value, options);
-
-  return {
-    output: serialized.output,
-    notes: [...parsed.notes, ...serialized.notes],
-  };
-}
-
-/** Fabrica o motor de um sentido de conversão. */
-export function converter(from: Format, to: Format): Engine {
-  return (input, options) => convert(from, to, input, options);
 }
 
 /** Fabrica o motor de beautify/minify de um formato. */
 export function formatter(format: Format, minify: boolean): Engine {
   return (input, options) => {
     if (input.trim() === "") return "";
-    const parsed = parseFormat(format, input, options);
+    const parsed = parseFormat(format, input);
     const serialized = serializeFormat(format, parsed.value, { ...options, minify });
     return { output: serialized.output, notes: [...parsed.notes, ...serialized.notes] };
   };
