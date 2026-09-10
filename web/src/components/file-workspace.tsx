@@ -237,8 +237,8 @@ export function FileWorkspace({
             {mode === "decompress" ? (
               <span className="max-w-lg text-xs text-text-muted">
                 {language === "pt"
-                  ? <>ZIP, GZIP, TAR e XZ rodam localmente até {formatBytes(CLIENT_MAX_BYTES)}. ZSTD, BZIP2, RAR e 7Z usam o servidor.</>
-                  : <>ZIP, GZIP, TAR, and XZ run locally up to {formatBytes(CLIENT_MAX_BYTES)}. ZSTD, BZIP2, RAR, and 7Z use the server.</>}
+                  ? <>ZIP, GZIP e TAR rodam localmente até {formatBytes(CLIENT_MAX_BYTES)}. ZSTD, RAR e 7Z usam o servidor.</>
+                  : <>ZIP, GZIP, and TAR run locally up to {formatBytes(CLIENT_MAX_BYTES)}. ZSTD, RAR, and 7Z use the server.</>}
               </span>
             ) : null}
           </label>

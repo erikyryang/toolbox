@@ -52,11 +52,7 @@ const SLUGS: Record<FormatId, string> = {
   zip: "zip",
   gzip: "gzip",
   zstd: "zstd",
-  xz: "xz",
-  bzip2: "bzip2",
   tar: "tar",
-  "tar.gz": "tar-gz",
-  "tar.zst": "tar-zst",
   rar: "rar",
   "7z": "7z",
 };
@@ -102,9 +98,9 @@ export const decompressOperation: OperationMeta = {
   name: "Descompactar",
   title: "Descompactar",
   subtitle:
-    "Abre ZIP, TAR, GZIP e XZ no navegador e lista o conteúdo antes de extrair. ZSTD, BZIP2, RAR e 7Z vão para o servidor.",
+    "Abre ZIP, TAR e GZIP no navegador e lista o conteúdo antes de extrair. ZSTD, RAR e 7Z vão para o servidor.",
   description:
-    "Descompactador de ZIP, RAR, 7Z, TAR, GZIP, ZSTD, XZ e BZIP2, com listagem de entradas e extração seletiva.",
+    "Descompactador de ZIP, RAR, 7Z, TAR, GZIP e ZSTD, com listagem de entradas e extração seletiva.",
   group: "Compactação",
   kind: "file",
   execution: "auto",

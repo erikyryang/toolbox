@@ -89,7 +89,7 @@ export function decideRouting({
   // 2. O nível pedido está acima do teto do navegador?
   if (
     direction === "compress" &&
-    (format === "zstd" || format === "tar.zst") &&
+    format === "zstd" &&
     level !== undefined &&
     level > ZSTD_CLIENT_MAX_LEVEL
   ) {

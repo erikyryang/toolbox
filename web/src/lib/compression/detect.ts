@@ -14,8 +14,8 @@ function matchesMagic(bytes: Uint8Array, format: FormatId): boolean {
 
 /**
  * Ordem importa: TAR é verificado antes dos envelopes porque sua assinatura
- * está no deslocamento 257, e os formatos compostos (tar.gz, tar.zst) só são
- * distinguíveis depois de descomprimir o envelope.
+ * está no deslocamento 257. Um TAR dentro de um envelope só aparece depois de
+ * descomprimi-lo, e é a inspeção que resolve isso.
  */
 const DETECTION_ORDER: FormatId[] = [
   "zip",
@@ -23,8 +23,6 @@ const DETECTION_ORDER: FormatId[] = [
   "7z",
   "gzip",
   "zstd",
-  "xz",
-  "bzip2",
   "tar",
 ];
 

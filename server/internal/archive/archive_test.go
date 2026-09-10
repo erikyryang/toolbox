@@ -39,12 +39,8 @@ func TestIdaEVoltaPorFormato(t *testing.T) {
 	}{
 		{Zip, true},
 		{Tar, true},
-		{TarGz, true},
-		{TarZst, true},
 		{Gzip, false},
 		{Zstd, false},
-		{Xz, false},
-		{Bzip2, false},
 	}
 
 	for _, tc := range cases {
@@ -138,7 +134,7 @@ func TestNivelAltoNaoPioraACompressao(t *testing.T) {
 }
 
 func TestPresetsCaemDentroDoRange(t *testing.T) {
-	for _, format := range []Format{Zip, Gzip, Zstd, Xz, Bzip2, TarGz, TarZst} {
+	for _, format := range []Format{Zip, Gzip, Zstd} {
 		spec, err := Lookup(format)
 		if err != nil {
 			t.Fatalf("Lookup %s: %v", format, err)
@@ -156,13 +152,9 @@ func TestPresetsBatemComOCliente(t *testing.T) {
 	// O mesmo preset precisa dar o mesmo nível dos dois lados; se divergirem,
 	// o resultado mudaria conforme onde a operação rodou.
 	want := map[Format]map[Preset]int{
-		Gzip:   {Fast: 1, Balanced: 6, Max: 9},
-		Zstd:   {Fast: 1, Balanced: 3, Max: 19},
-		Xz:     {Fast: 0, Balanced: 6, Max: 9},
-		Bzip2:  {Fast: 1, Balanced: 5, Max: 9},
-		Zip:    {Fast: 1, Balanced: 6, Max: 9},
-		TarGz:  {Fast: 1, Balanced: 6, Max: 9},
-		TarZst: {Fast: 1, Balanced: 3, Max: 19},
+		Gzip: {Fast: 1, Balanced: 6, Max: 9},
+		Zstd: {Fast: 1, Balanced: 3, Max: 19},
+		Zip:  {Fast: 1, Balanced: 6, Max: 9},
 	}
 
 	for format, presets := range want {
