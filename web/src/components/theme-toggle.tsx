@@ -1,7 +1,6 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { Moon, Sun } from "lucide-react";
 
 import {
   applyTheme,
@@ -70,7 +69,12 @@ export function ThemeToggle() {
       aria-label={label}
       title={label}
     >
-      {theme === "dark" ? <Sun aria-hidden /> : <Moon aria-hidden />}
+      {/*
+        O mesmo glifo do erikyryan.dev.br. Ele não muda com o tema: quem lê a
+        tela recebe o estado pelo rótulo, e quem vê a tela já sabe qual tema
+        está aplicado — o botão diz apenas onde se troca.
+      */}
+      <span aria-hidden>◐</span>
     </Button>
   );
 }

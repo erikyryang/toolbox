@@ -99,6 +99,21 @@
 }
 
 @layer base {
+  /*
+   * A goteira da coluna de conteúdo é uma variável, e não um par de classes
+   * `px-4 sm:px-8` repetido em cada página, porque a topbar precisa ler o
+   * mesmo valor para terminar onde o conteúdo termina.
+   */
+  :root {
+    --content-gutter: var(--content-gutter-narrow);
+  }
+
+  @media (width >= 40rem) {
+    :root {
+      --content-gutter: var(--content-gutter-wide);
+    }
+  }
+
   *,
   *::before,
   *::after {
@@ -172,18 +187,99 @@
     color: var(--accent);
   }
 
-  /* Três dots de janela de terminal, à esquerda do header. */
-  .terminal-dots {
-    display: flex;
-    gap: var(--space-3xs);
+  /*
+   * A topbar do erikyryan.dev.br, parte por parte e com os nomes de lá: a
+   * barra, a caixa interna, os dots, a fila de abas e os controles. Mora em
+   * CSS, e não em utilitário espalhado pelo componente, porque as medidas
+   * são as daquele arquivo e vale poder conferi-las lado a lado.
+   */
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
   }
 
-  .terminal-dots i {
+  /*
+   * A caixa interna repete a grade da página em vez de correr solta de ponta
+   * a ponta: o cluster da esquerda começa na coluna da sidebar, e o da
+   * direita termina exatamente na borda direita do conteúdo.
+   *
+   * É a mesma regra de lá — `.topbar-inner` e `.container` são a mesma caixa
+   * — traduzida para um layout que tem duas colunas. O recuo da direita
+   * reconstrói onde a coluna de conteúdo acaba: o quanto sobra dos dois
+   * lados dela, dividido ao meio, mais a própria goteira.
+   */
+  .topbar-inner {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding-block: var(--space-2xs);
+    padding-inline: var(--content-gutter);
+  }
+
+  /* Da largura em que a sidebar aparece, ela entra na conta dos dois lados. */
+  @media (width >= 64rem) {
+    .topbar-inner {
+      padding-left: var(--sidebar-gutter);
+      padding-right: calc(
+        max(
+          0px,
+          (100% - var(--sidebar-width) - var(--content-max-width)) / 2
+        ) + var(--content-gutter)
+      );
+    }
+  }
+
+  /* Três dots de janela de terminal, à esquerda da topbar. */
+  .topbar-dots {
+    display: flex;
+    gap: var(--space-2xs);
+  }
+
+  .topbar-dots i {
     width: 0.6rem;
     height: 0.6rem;
     border: 1px solid var(--border);
     border-radius: 50%;
     background: var(--surface-raised);
+  }
+
+  /*
+   * A fila de abas ocupa o meio e rola na horizontal quando não cabe, sem
+   * barra à mostra — assim uma aba a mais nunca empurra os controles para
+   * fora. Cada aba não encolhe: quem cede espaço é a fila, rolando.
+   */
+  .topbar-tabs {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    align-items: center;
+    gap: var(--space-2xs);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .topbar-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .topbar-tabs > * {
+    flex: none;
+  }
+
+  .topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2xs);
+  }
+
+  /* Estreito o bastante, os dots saem antes das abas — são ornamento. */
+  @media (width <= 560px) {
+    .topbar-dots {
+      display: none;
+    }
   }
 
   /* Números que o usuário compara entre linhas alinham em coluna. */

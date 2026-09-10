@@ -28,7 +28,7 @@ export function OverviewPanel({
   );
 
   return (
-    <main className="mx-auto w-full max-w-[var(--content-max-width)] px-4 py-12 sm:px-8 sm:py-16">
+    <main className="mx-auto w-full max-w-[var(--content-max-width)] px-[var(--content-gutter)] py-12 sm:py-16">
       <header className="max-w-2xl">
         <p className="text-sm text-text-muted" aria-hidden>
           you@toolbox:~$ ls

@@ -17,7 +17,8 @@ export function LanguageToggle() {
       aria-label={label}
       title={label}
     >
-      {language.toUpperCase()}
+      {/* Como no site: o chip mostra o idioma de destino, não o atual. */}
+      {next.toUpperCase()}
     </Button>
   );
 }

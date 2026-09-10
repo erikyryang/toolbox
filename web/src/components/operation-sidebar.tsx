@@ -16,7 +16,7 @@ export function OperationSidebar({
   const { language } = useLanguage();
 
   return (
-    <aside className="sticky top-0 hidden h-[calc(100vh-var(--header-height))] w-64 shrink-0 overflow-y-auto border-r border-border bg-surface-raised px-3 py-5 lg:block">
+    <aside className="sticky top-[var(--header-height)] hidden h-[calc(100vh-var(--header-height))] w-[var(--sidebar-width)] shrink-0 overflow-y-auto border-r border-border bg-surface-raised px-[var(--sidebar-gutter)] py-5 lg:block">
       <nav aria-label={language === "pt" ? "Ferramentas" : "Tools"} className="flex flex-col gap-6">
         <Link
           href="/"

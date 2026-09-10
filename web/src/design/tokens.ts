@@ -280,8 +280,25 @@ export const spacing = {
  */
 export const radius = "6px";
 
-/** Largura máxima do conteúdo, conforme a especificação de layout. */
+/**
+ * Largura máxima do conteúdo, conforme a especificação de layout.
+ *
+ * A largura da sidebar e as duas goteiras são token, e não número solto em
+ * classe, porque a topbar depende delas: é assim que o primeiro item dela cai
+ * na coluna da sidebar e o último na borda direita do conteúdo. Se cada lado
+ * escrevesse o próprio valor, o alinhamento sairia do lugar na primeira
+ * mudança de um deles.
+ *
+ * `headerHeight` não dita a altura da topbar — ela é medida pelo conteúdo,
+ * como no erikyryan.dev.br: 0.5rem de padding em cima e embaixo em volta de um
+ * chip de 1.8625rem. O token repete esse total para quem precisa descontá-lo
+ * da viewport (a sidebar grudada abaixo do header).
+ */
 export const layout = {
   contentMaxWidth: "1100px",
-  headerHeight: "3.25rem",
+  headerHeight: "2.875rem",
+  sidebarWidth: "16rem",
+  sidebarGutter: "0.75rem",
+  contentGutterNarrow: "1rem",
+  contentGutterWide: "2rem",
 } as const;

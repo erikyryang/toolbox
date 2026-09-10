@@ -93,7 +93,7 @@ function Workspace({ operation }: { operation: Operation }) {
   }
 
   return (
-    <main className="mx-auto w-full max-w-[var(--content-max-width)] px-4 py-10 sm:px-6 sm:py-14">
+    <main className="mx-auto w-full max-w-[var(--content-max-width)] px-[var(--content-gutter)] py-10 sm:py-14">
       <OperationHeading
         slug={operation.slug}
         title={localized.title}

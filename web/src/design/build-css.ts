@@ -88,6 +88,10 @@ ${scaleBlock("space", spacing)}
   /* Layout */
   --content-max-width: ${layout.contentMaxWidth};
   --header-height: ${layout.headerHeight};
+  --sidebar-width: ${layout.sidebarWidth};
+  --sidebar-gutter: ${layout.sidebarGutter};
+  --content-gutter-narrow: ${layout.contentGutterNarrow};
+  --content-gutter-wide: ${layout.contentGutterWide};
 }
 
 /*
