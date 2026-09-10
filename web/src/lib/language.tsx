@@ -81,37 +81,6 @@ const englishOperations: Partial<Record<string, Partial<OperationMeta>>> = {
     forward: { label: "Encode", inputLabel: "Text", outputLabel: "Base64" },
     reverse: { label: "Decode", inputLabel: "Base64", outputLabel: "Text" },
   },
-  hex: {
-    title: "Hexadecimal",
-    subtitle: "Convert text to hexadecimal bytes and back, accepting spaces and line breaks in the input.",
-    description: "Hexadecimal converter: text to bytes and bytes to text, with case and separator controls in your browser.",
-    forward: { label: "Encode", inputLabel: "Text", outputLabel: "Hexadecimal" },
-    reverse: { label: "Decode", inputLabel: "Hexadecimal", outputLabel: "Text" },
-  },
-  "jwt-decode": {
-    subtitle: "Show a JSON Web Token header, payload, and dates. The signature is not verified.",
-    description: "JWT decoder: header, payload, and time claims in readable dates without sending the token anywhere.",
-    forward: { label: "Decode", inputLabel: "Token", outputLabel: "Contents" },
-  },
-  "unicode-escape": {
-    subtitle: "Convert text to escape sequences and back, with correct surrogate pairs outside the BMP.",
-    description: "Unicode escape converter for \\uXXXX, \\u{...}, and \\xXX styles, processed in your browser.",
-    forward: { label: "Escape", inputLabel: "Text", outputLabel: "Escaped" },
-    reverse: { label: "Unescape", inputLabel: "Escaped", outputLabel: "Text" },
-  },
-  "query-string": {
-    subtitle: "Parse a query string into readable pairs and rebuild it while preserving repeated keys.",
-    description: "Query string parser and serializer with repeated-key preservation and optional sorting.",
-    forward: { label: "Parse", inputLabel: "Query string", outputLabel: "Pairs" },
-    reverse: { label: "Build", inputLabel: "Pairs", outputLabel: "Query string" },
-  },
-  charset: {
-    title: "UTF-8 and Latin-1 charset",
-    subtitle: "Encode text in one charset and read it in another to repair mojibake.",
-    description: "Charset converter between UTF-8 and ISO-8859-1 (Latin-1), reporting characters that cannot be represented.",
-    forward: { label: "Convert", inputLabel: "Text", outputLabel: "Reinterpreted" },
-    reverse: { label: "Invert charsets", inputLabel: "Text", outputLabel: "Reinterpreted" },
-  },
   base32: {
     subtitle: "Encode and decode Base32 (RFC 4648), with optional padding.",
     description: "Base32 encoder and decoder (RFC 4648), processed in your browser.",

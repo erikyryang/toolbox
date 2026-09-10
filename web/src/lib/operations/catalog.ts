@@ -45,43 +45,6 @@ const encodingOperationsPhase1: OperationMeta[] = [
       },
     ],
   },
-  {
-    slug: "hex",
-    name: "Hex",
-    title: "Hexadecimal",
-    subtitle:
-      "Converte texto em bytes hexadecimais e de volta, tolerando espaços e quebras de linha na entrada.",
-    description:
-      "Conversor hexadecimal: texto para bytes e bytes para texto, com escolha de caixa e separador, no seu navegador.",
-    group: "Codificação",
-    execution: "client",
-    placeholder: "AB",
-    forward: { label: "Codificar", inputLabel: "Texto", outputLabel: "Hexadecimal" },
-    reverse: { label: "Decodificar", inputLabel: "Hexadecimal", outputLabel: "Texto" },
-    options: [
-      {
-        kind: "select",
-        id: "case",
-        label: "Caixa dos dígitos",
-        default: "lower",
-        choices: [
-          { value: "lower", label: "Minúscula" },
-          { value: "upper", label: "Maiúscula" },
-        ],
-      },
-      {
-        kind: "select",
-        id: "separator",
-        label: "Separador",
-        help: "Só afeta a saída; na entrada, espaços são sempre tolerados.",
-        default: "none",
-        choices: [
-          { value: "none", label: "Nenhum" },
-          { value: "space", label: "Espaço a cada byte" },
-        ],
-      },
-    ],
-  },
 ];
 
 export const operationCatalog: OperationMeta[] = [

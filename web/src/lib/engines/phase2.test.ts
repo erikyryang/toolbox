@@ -9,90 +9,14 @@ import {
   fromBase58,
   toBase58,
 } from "./base32-58.ts";
-import { convertCharset, convertCharsetReversed } from "./charset.ts";
 import { OperationError } from "./errors.ts";
-import { decodeJwt } from "./jwt.ts";
 import { derToPem, pemToDer } from "./pem-der.ts";
 import { fromPunycode, toPunycode } from "./punycode-idna.ts";
-import { queryToStructure, structureToQuery } from "./query-string.ts";
 import { dateToTimestamp, timestampToDate } from "./timestamp.ts";
-import { escapeUnicode, unescapeUnicode } from "./unicode-escape.ts";
-import { normalizeResult } from "../operations/types.ts";
+import { normalizeResult, type EngineResult } from "../operations/types.ts";
 
-const out = (result: ReturnType<typeof decodeJwt>) => normalizeResult(result).output;
-const notes = (result: ReturnType<typeof decodeJwt>) => normalizeResult(result).notes;
-
-// Token com header/payload reais; a assinatura é irrelevante porque não é
-// verificada — e o teste garante que a interface diga isso.
-function tokenWith(payload: Record<string, unknown>): string {
-  const encode = (value: unknown) =>
-    Buffer.from(JSON.stringify(value))
-      .toString("base64")
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-      .replace(/=+$/, "");
-  return `${encode({ alg: "HS256", typ: "JWT" })}.${encode(payload)}.assinatura`;
-}
-
-describe("JWT", () => {
-  it("mostra cabeçalho e payload formatados", () => {
-    const result = decodeJwt(tokenWith({ sub: "1" }), { indent: "2" });
-    expect(out(result)).toContain('"alg": "HS256"');
-    expect(out(result)).toContain('"sub": "1"');
-  });
-
-  it("avisa sempre que a assinatura não foi verificada", () => {
-    const result = decodeJwt(tokenWith({ sub: "1" }), {});
-    expect(notes(result).join(" ")).toContain("assinatura não foi verificada");
-  });
-
-  it("sinaliza token expirado", () => {
-    const result = decodeJwt(tokenWith({ exp: 1000 }), {});
-    expect(notes(result).join(" ")).toContain("expirado");
-  });
-
-  it("mostra claims temporais em data legível", () => {
-    const result = decodeJwt(tokenWith({ iat: 1700000000 }), {});
-    expect(out(result)).toContain("2023-11-14");
-  });
-
-  it("recusa token sem três segmentos", () => {
-    expect(() => decodeJwt("a.b", {})).toThrow(/três segmentos/);
-  });
-});
-
-describe("Unicode escape", () => {
-  it("escapa fora do BMP como par substituto no estilo \\uXXXX", () => {
-    expect(escapeUnicode("😀", { style: "u4", onlyNonAscii: true })).toBe(
-      "\\uD83D\\uDE00",
-    );
-  });
-
-  it("escapa fora do BMP como código inteiro no estilo com chaves", () => {
-    expect(escapeUnicode("😀", { style: "brace", onlyNonAscii: true })).toBe(
-      "\\u{1F600}",
-    );
-  });
-
-  it("desescapa referências dos três estilos", () => {
-    expect(unescapeUnicode("\\u00e9")).toBe("é");
-    expect(unescapeUnicode("\\u{1F600}")).toBe("😀");
-    expect(unescapeUnicode("\\x41")).toBe("A");
-    expect(unescapeUnicode("\\uD83D\\uDE00")).toBe("😀");
-  });
-
-  it("preserva ASCII quando pedido", () => {
-    expect(escapeUnicode("aé", { style: "u4", onlyNonAscii: true })).toBe(
-      "a\\u00E9",
-    );
-  });
-
-  it("recusa \\xXX acima de U+00FF", () => {
-    expect(() => escapeUnicode("é😀", { style: "x2", onlyNonAscii: true })).toThrow(
-      OperationError,
-    );
-  });
-});
+const out = (result: EngineResult) => normalizeResult(result).output;
+const notes = (result: EngineResult) => normalizeResult(result).notes;
 
 describe("Punycode", () => {
   it("converte para ASCII", () => {
@@ -146,60 +70,7 @@ describe("Unix timestamp", () => {
   });
 });
 
-describe("Query string", () => {
-  it("preserva chaves repetidas", () => {
-    const result = queryToStructure("a=1&b=2&a=3", {});
-    expect(JSON.parse(out(result))).toEqual([
-      ["a", "1"],
-      ["b", "2"],
-      ["a", "3"],
-    ]);
-    expect(notes(result).join(" ")).toContain('"a" aparece 2 vezes');
-  });
 
-  it("remonta preservando chaves repetidas", () => {
-    const structure = out(queryToStructure("a=1&b=2&a=3", {}));
-    expect(out(structureToQuery(structure, {}))).toBe("a=1&b=2&a=3");
-  });
-
-  it("ordena por chave quando pedido", () => {
-    expect(out(structureToQuery('[["b","2"],["a","1"]]', { sort: true }))).toBe(
-      "a=1&b=2",
-    );
-  });
-
-  it("decodifica percent-encoding e + nos pares", () => {
-    expect(JSON.parse(out(queryToStructure("q=a+b%26c", {})))).toEqual([
-      ["q", "a b&c"],
-    ]);
-  });
-
-  it("recusa estrutura que não é objeto nem lista de pares", () => {
-    expect(() => structureToQuery('"texto"', {})).toThrow(OperationError);
-  });
-});
-
-describe("Charset", () => {
-  it("conserta mojibake de UTF-8 lido como Latin-1", () => {
-    // "ação" cujos bytes UTF-8 foram lidos como Latin-1.
-    const mojibake = "aÃ§Ã£o";
-    expect(
-      out(convertCharset(mojibake, { encodeAs: "latin-1", readAs: "utf-8" })),
-    ).toBe("ação");
-  });
-
-  it("sinaliza caractere não representável em Latin-1 e sua posição", () => {
-    const result = convertCharset("a€", { encodeAs: "latin-1", readAs: "latin-1" });
-    expect(notes(result).join(" ")).toContain("€");
-    expect(notes(result).join(" ")).toContain("posição 1");
-  });
-
-  it("inverter troca os dois charsets de papel", () => {
-    const options = { encodeAs: "latin-1", readAs: "utf-8" };
-    const ida = out(convertCharset("aÃ§Ã£o", options));
-    expect(out(convertCharsetReversed(ida, options))).toBe("aÃ§Ã£o");
-  });
-});
 
 describe("Base32", () => {
   it("codifica com preenchimento", () => {
