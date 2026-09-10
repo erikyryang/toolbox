@@ -26,6 +26,7 @@ import { detectFormat } from "@/lib/compression/detect";
 import { CLIENT_MAX_BYTES, decideRouting, formatBytes, type RoutingDecision } from "@/lib/compression/limits";
 import type { OperationMeta, OptionValue, OptionValues } from "@/lib/operations/types";
 import { defaultOptionValues } from "@/lib/operations/types";
+import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/language";
 
 type Mode = "compress" | "decompress";
@@ -54,6 +55,7 @@ export function FileWorkspace({
   const [archive, setArchive] = useState<Archive | undefined>();
   const [detectedFormat, setDetectedFormat] = useState<FormatId | undefined>();
   const [busy, setBusy] = useState(false);
+  const [dragging, setDragging] = useState(false);
   const [error, setError] = useState<string | undefined>();
   const [result, setResult] = useState<{ name: string; bytes: Uint8Array } | undefined>();
 
@@ -84,9 +86,22 @@ export function FileWorkspace({
     level,
   });
 
+  const acceptsMany = mode === "compress" && !!format && FORMATS[format].container;
+
   const setOption = useCallback((id: string, value: OptionValue) => {
     setOptions((current) => ({ ...current, [id]: value }));
   }, []);
+
+  /**
+   * Arrastar e soltar. A área já tinha a aparência de um alvo de arraste —
+   * borda tracejada e seta — sem responder a um; o descompasso fazia a
+   * ferramenta parecer quebrada para quem tentava o gesto óbvio.
+   */
+  function onDrop(event: React.DragEvent) {
+    event.preventDefault();
+    setDragging(false);
+    void onSelect(event.dataTransfer.files);
+  }
 
   function reset() {
     clientRef.current?.terminate();
@@ -97,6 +112,7 @@ export function FileWorkspace({
     setResult(undefined);
     setError(undefined);
     setBusy(false);
+    setDragging(false);
   }
 
   async function onSelect(list: FileList | null) {
@@ -106,8 +122,11 @@ export function FileWorkspace({
     setResult(undefined);
     setArchive(undefined);
 
+    // O atributo `multiple` do input já limita a escolha pelo seletor, mas o
+    // arrastar não passa por ele: aqui a regra vale para os dois caminhos.
+    const incoming = acceptsMany ? Array.from(list) : [list[0]];
     const selected: Selected[] = [];
-    for (const file of Array.from(list)) {
+    for (const file of incoming) {
       selected.push({ name: file.name, size: file.size, data: await file.arrayBuffer() });
     }
     const detected = mode === "decompress"
@@ -221,16 +240,29 @@ export function FileWorkspace({
         <section className="flex flex-col gap-3">
           <label
             htmlFor={inputId}
-            className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border border-dashed border-border-interactive bg-surface-raised px-4 py-10 text-center transition-colors hover:border-accent hover:bg-surface"
+            onDragEnter={(event) => { event.preventDefault(); setDragging(true); }}
+            onDragOver={(event) => { event.preventDefault(); setDragging(true); }}
+            onDragLeave={(event) => {
+              // Só sai do estado quando o ponteiro deixa a área inteira, não ao
+              // cruzar a fronteira de um filho.
+              if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDragging(false);
+            }}
+            onDrop={onDrop}
+            className={cn(
+              "flex cursor-pointer flex-col items-center gap-2 rounded-xl border border-dashed bg-surface-raised px-4 py-10 text-center transition-colors hover:border-accent hover:bg-surface",
+              dragging ? "border-accent bg-surface" : "border-border-interactive",
+            )}
           >
-            <Upload aria-hidden className="size-5 text-text-muted" />
+            <Upload aria-hidden className={cn("size-5", dragging ? "text-accent-text" : "text-text-muted")} />
             <span className="text-sm text-text">
-              {mode === "compress"
-                ? (language === "pt" ? "Escolha os arquivos para compactar" : "Choose files to compress")
-                : (language === "pt" ? "Escolha o arquivo para descompactar" : "Choose an archive to extract")}
+              {dragging
+                ? (language === "pt" ? "Solte para começar" : "Drop to start")
+                : mode === "compress"
+                ? (language === "pt" ? "Arraste os arquivos aqui ou clique para escolher" : "Drag files here or click to choose")
+                : (language === "pt" ? "Arraste o arquivo aqui ou clique para escolher" : "Drag an archive here or click to choose")}
             </span>
             <span className="text-xs text-text-muted">
-              {mode === "compress" && format && FORMATS[format].container
+              {acceptsMany
                 ? (language === "pt" ? "Vários arquivos podem ser selecionados de uma vez." : "You can select several files at once.")
                 : (language === "pt" ? "Um arquivo por vez." : "One file at a time.")}
             </span>
@@ -246,7 +278,7 @@ export function FileWorkspace({
           <input
             id={inputId}
             type="file"
-            multiple={mode === "compress" && !!format && FORMATS[format].container}
+            multiple={acceptsMany}
             onChange={(event) => onSelect(event.target.files)}
             className="sr-only"
             aria-describedby={error ? errorId : undefined}

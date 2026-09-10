@@ -53,7 +53,7 @@ export function OverviewPanel({
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder={language === "pt" ? "Buscar ferramenta" : "Search tools"}
-          className="h-12 w-full rounded-xl border border-border bg-surface-raised pl-11 pr-4 text-base text-text outline-none placeholder:text-text-muted focus:border-accent"
+          className="h-12 w-full rounded-xl border border-border bg-surface-raised pl-11 pr-4 text-base text-text placeholder:text-text-muted focus:border-accent"
         />
       </label>
 
