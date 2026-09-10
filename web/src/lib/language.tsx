@@ -107,8 +107,8 @@ const englishOperations: Partial<Record<string, Partial<OperationMeta>>> = {
   descompactar: {
     name: "Extract",
     title: "Extract",
-    subtitle: "Open ZIP, TAR, and GZIP in your browser and inspect contents before extraction. ZSTD, RAR, and 7Z use the server.",
-    description: "Extractor for ZIP, RAR, 7Z, TAR, GZIP, and ZSTD, with entry listing and selective extraction.",
+    subtitle: "Open a file from disk or paste its Base64 contents, and inspect what is inside before extracting.",
+    description: "Extractor for ZIP, RAR, 7Z, TAR, GZIP, and ZSTD, from a file or from pasted Base64, with entry listing and selective extraction.",
     forward: { label: "Extract", inputLabel: "Archive", outputLabel: "Contents" },
   },
 };
