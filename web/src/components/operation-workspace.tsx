@@ -8,14 +8,16 @@ import { OperationHeading } from "@/components/operation-heading";
 import { PrivacyNote } from "@/components/privacy-note";
 import { TextPanel } from "@/components/text-panel";
 import { Button } from "@/components/ui/button";
-import { getOperation } from "@/lib/operations/registry";
+import { operationMetaBySlug } from "@/lib/operations/catalog";
 import { runOperation } from "@/lib/operations/run";
+import { useOperationLoader } from "@/lib/operations/use-operation-loader";
 import {
   defaultOptionValues,
   directionOf,
   splitOptions,
   type Direction,
-  type Operation,
+  type OperationMeta,
+  type OperationOutcome,
   type OptionValue,
 } from "@/lib/operations/types";
 import { useDebounced } from "@/lib/use-debounced";
@@ -31,19 +33,24 @@ import { localizeOperation, useLanguage } from "@/lib/language";
  * entrada ou de opção.
  */
 export function OperationWorkspace({ slug }: { slug: string }) {
-  // O descritor é resolvido aqui, no cliente: motores são funções e funções
-  // não atravessam o limite servidor/cliente.
-  const operation = getOperation(slug);
+  // Só os metadados são resolvidos aqui: eles são dados, e é com eles que a
+  // tela inteira se desenha. O motor é função — não atravessa o limite
+  // servidor/cliente — e chega depois, pelo carregador, num chunk só dele.
+  const operation = operationMetaBySlug(slug);
   if (!operation) {
-    throw new Error(`Operação sem motor registrado: ${slug}`);
+    throw new Error(`Operação fora do catálogo: ${slug}`);
   }
 
-  return <Workspace operation={operation} />;
+  // A chave amarra entrada, sentido e opções ao slug: trocar de operação
+  // recomeça a tela, em vez de misturar o estado de uma com o motor da outra.
+  return <Workspace key={slug} operation={operation} />;
 }
 
-function Workspace({ operation }: { operation: Operation }) {
+function Workspace({ operation }: { operation: OperationMeta }) {
+  const { state: loading, retry } = useOperationLoader(operation.slug);
+  const loadedOperation = loading.status === "ready" ? loading.operation : undefined;
   const { language } = useLanguage();
-  const localized = localizeOperation(operation, language) as Operation;
+  const localized = localizeOperation(operation, language);
   const [input, setInput] = useState("");
   const [direction, setDirection] = useState<Direction>("forward");
   const [options, setOptions] = useState(() => defaultOptionValues(operation));
@@ -51,9 +58,17 @@ function Workspace({ operation }: { operation: Operation }) {
   const errorId = useId();
   const debouncedInput = useDebounced(input);
 
-  const outcome = useMemo(
-    () => runOperation(operation, direction, debouncedInput, options),
-    [operation, direction, debouncedInput, options],
+  /**
+   * Enquanto o motor não chega, o resultado é o mesmo de uma entrada vazia:
+   * saída em branco e nenhum erro. Não ter motor ainda não é entrada inválida
+   * — marcar o campo como inválido acusaria de errado quem só digitou cedo.
+   */
+  const outcome = useMemo<OperationOutcome>(
+    () =>
+      loadedOperation
+        ? runOperation(loadedOperation, direction, debouncedInput, options)
+        : { ok: true, output: "", processedOn: "client", notes: [] },
+    [loadedOperation, direction, debouncedInput, options],
   );
 
   const active = directionOf(localized, direction);
@@ -84,10 +99,17 @@ function Workspace({ operation }: { operation: Operation }) {
    * A saída é recalculada aqui a partir do input corrente, e não lida de
    * `outcome`: aquele valor deriva do input *debounced*, e quem digita e troca
    * de sentido no mesmo instante levaria o resultado anterior consigo.
+   *
+   * Sem motor ainda não há o que promover: o sentido muda e o que foi digitado
+   * fica onde está, em vez de ser apagado por uma conversão que não aconteceu.
    */
   function switchTo(next: Direction) {
     if (next === direction) return;
-    const fresh = runOperation(operation, direction, input, options);
+    if (!loadedOperation) {
+      setDirection(next);
+      return;
+    }
+    const fresh = runOperation(loadedOperation, direction, input, options);
     setDirection(next);
     setInput(fresh.ok ? fresh.output : "");
   }
@@ -156,6 +178,30 @@ function Workspace({ operation }: { operation: Operation }) {
 
         {active.help ? (
           <p className="max-w-2xl text-xs text-text-muted">{active.help}</p>
+        ) : null}
+
+        {/*
+          O que está acontecendo com o motor é dito em texto, não só pela
+          ausência de saída: `status` avisa sem interromper quem está digitando,
+          e `alert` interrompe quando não há mais o que esperar. A falha vem
+          acompanhada da ação — o chunk pode ter caído por uma rede ruim, e
+          tentar de novo costuma bastar.
+        */}
+        {loading.status === "loading" ? (
+          <p role="status" className="text-xs text-text-muted">
+            {language === "pt" ? "Carregando ferramenta…" : "Loading tool…"}
+          </p>
+        ) : loading.status === "error" ? (
+          <div className="flex items-center gap-3">
+            <p role="alert" className="text-sm text-danger">
+              {language === "pt"
+                ? "Não foi possível carregar a ferramenta."
+                : "Could not load the tool."}
+            </p>
+            <Button variant="outline" size="sm" onClick={retry}>
+              {language === "pt" ? "Tentar novamente" : "Try again"}
+            </Button>
+          </div>
         ) : null}
 
         <PrimaryOptions options={primary} values={options} onChange={setOption} />

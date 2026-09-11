@@ -8,7 +8,7 @@ import {
   operationsByGroup,
 } from "./catalog.ts";
 import { formatForSlug, slugForFormat } from "./compression-catalog.ts";
-import { getOperation, implementedSlugs } from "./registry.ts";
+import { implementedSlugs, loadOperation } from "./registry.ts";
 import { defaultOptionValues, splitOptions } from "./types.ts";
 
 /**
@@ -19,9 +19,9 @@ const textOperations = operationCatalog.filter((meta) => meta.kind !== "file");
 const fileOperations = operationCatalog.filter((meta) => meta.kind === "file");
 
 describe("catálogo e motores", () => {
-  it("todo slug de operação de texto tem motor registrado", () => {
+  it("todo slug de operação de texto tem motor registrado", async () => {
     for (const meta of textOperations) {
-      expect(getOperation(meta.slug), `sem motor: ${meta.slug}`).toBeDefined();
+      expect(await loadOperation(meta.slug), `sem motor: ${meta.slug}`).toBeDefined();
     }
   });
 
@@ -80,9 +80,9 @@ describe("catálogo e motores", () => {
     expect(new Set(slugs).size).toBe(slugs.length);
   });
 
-  it("operação reversível tem motor para os dois sentidos", () => {
+  it("operação reversível tem motor para os dois sentidos", async () => {
     for (const meta of textOperations) {
-      const operation = getOperation(meta.slug);
+      const operation = await loadOperation(meta.slug);
       if (meta.reverse) {
         expect(operation?.engines.reverse, `sem motor reverso: ${meta.slug}`).toBeTypeOf(
           "function",
@@ -93,11 +93,11 @@ describe("catálogo e motores", () => {
     }
   });
 
-  it("todo motor falha apenas com erro legível", () => {
+  it("todo motor falha apenas com erro legível", async () => {
     // Placeholders são ilustrativos e nem sempre são entrada válida — o que
     // precisa valer é que nenhuma falha escape como exceção crua.
     for (const meta of textOperations) {
-      const operation = getOperation(meta.slug)!;
+      const operation = (await loadOperation(meta.slug))!;
       const options = defaultOptionValues(meta);
 
       try {
@@ -111,9 +111,9 @@ describe("catálogo e motores", () => {
     }
   });
 
-  it("nenhum motor lança com entrada vazia", () => {
+  it("nenhum motor lança com entrada vazia", async () => {
     for (const meta of textOperations) {
-      const operation = getOperation(meta.slug)!;
+      const operation = (await loadOperation(meta.slug))!;
       const options = defaultOptionValues(meta);
       expect(() => operation.engines.forward("", options), meta.slug).not.toThrow();
       if (operation.engines.reverse) {
