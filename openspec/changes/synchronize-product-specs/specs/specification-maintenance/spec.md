@@ -36,4 +36,3 @@ A documentação SHALL informar como validar specs e encerrar mudanças implemen
 
 - **WHEN** o comando documentado de validação estrita é executado
 - **THEN** todas as specs e mudanças disponíveis são verificadas sem erro
-

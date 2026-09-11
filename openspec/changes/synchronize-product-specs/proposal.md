@@ -23,4 +23,3 @@ Nenhuma alteração adicional de requisitos existentes fora dos deltas já ident
 openspec/specs, openspec/changes, openspec/config.yaml e documentação. Nenhuma alteração de execução do produto.
 
 Branch: `docs/synchronize-product-specs`. Base: `main@9fc33af`. Esta melhoria terá PR próprio.
-
