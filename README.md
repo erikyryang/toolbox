@@ -260,6 +260,19 @@ go test ./...
 go build ./cmd/toolbox-server
 ```
 
+Browser flows and CI:
+
+```bash
+cd web
+npm ci
+npx playwright install chromium --only-shell
+npm run test:e2e
+```
+
+The E2E suite starts a production frontend and the real Go backend on isolated
+ports. See the [browser testing guide](web/e2e/README.md) for prerequisites,
+test-only limits, covered flows, reports, and the matching CI commands.
+
 ## Configuration
 
 The [specification maintenance guide](openspec/README.md) explains how to
