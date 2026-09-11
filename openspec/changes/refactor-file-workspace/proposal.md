@@ -23,4 +23,3 @@ Nenhuma alteração adicional de requisitos existentes fora dos deltas já ident
 web/src/components/file-workspace.tsx, novos componentes/hook de arquivos, lib/compression/backend.ts e testes do controlador. Sem mudança dos endpoints Go, formatos, limites ou layout pretendido.
 
 Branch: `refactor/file-workspace-lifecycle`. Base: `main@9fc33af`. Esta melhoria terá PR próprio.
-

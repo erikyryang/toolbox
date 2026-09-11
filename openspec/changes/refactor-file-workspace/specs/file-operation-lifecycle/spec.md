@@ -41,4 +41,3 @@ A interface SHALL delegar seleção, inspeção, compressão e extração a uma 
 
 - **WHEN** a tela de compactação ou extração é aberta
 - **THEN** formatos, presets, colagem, privacidade, listagem e download continuam disponíveis conforme as capacidades existentes
-

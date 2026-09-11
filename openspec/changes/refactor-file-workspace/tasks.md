@@ -6,4 +6,3 @@
 - [x] 1.4 Implementar cancelamento, invalidação de gerações e limpeza de Worker.
 - [x] 1.5 Testar leitura limitada, corpos HTTP, troca de seleção, reset e cancelamento.
 - [x] 1.6 Executar lint, typecheck, suíte frontend, build e validação OpenSpec estrita.
-
