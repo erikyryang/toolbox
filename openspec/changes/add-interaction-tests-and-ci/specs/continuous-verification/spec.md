@@ -33,14 +33,9 @@ A suíte SHALL exercitar compressão/extração em Worker, uma operação rotead
 - **WHEN** o usuário vai de compactar para descompactar e volta por links internos
 - **THEN** seleção, conteúdo do arquivo e downloads são descartados e cada rota mostra os controles da sua operação
 
-### Requirement: Verificação contínua reproduzível
+### Requirement: Verificação reproduzível
 
-O repositório SHALL executar lint, typecheck, testes unitários frontend/Go, build frontend, validação OpenSpec e testes de navegador em PRs e pushes na main.
-
-#### Scenario: PR aberto
-
-- **WHEN** um pull request atualiza o código
-- **THEN** os jobs executam instalações reproduzíveis e falham se qualquer verificação falhar
+O repositório SHALL documentar como executar lint, typecheck, testes unitários frontend/Go, build frontend, validação OpenSpec e testes de navegador com instalações reproduzíveis.
 
 #### Scenario: Execução local
 

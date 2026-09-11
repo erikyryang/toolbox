@@ -1,7 +1,7 @@
 # Browser tests
 
 Use Node **26.7.0** (also recorded in `web/.node-version`) and Go **1.25.1 or newer**
-as declared in `server/go.mod`. CI uses that Go version from the module file.
+as declared in `server/go.mod`.
 From `web/`:
 
 ```sh
@@ -31,7 +31,7 @@ The configuration scopes these settings to its server subprocesses:
 | `ALLOWED_ORIGINS` | `http://127.0.0.1:3100` | Allow the test frontend origin |
 | `SPOOL_DIR` | `web/.e2e-spool` | Isolate temporary backend staging |
 | `REQUEST_MAX_BYTES` / `MEM_BUFFER_MAX` | `1048576` / `65536` | Bound test requests and buffering |
-| `RATE_PER_MINUTE` / `RATE_BURST` | `120` / `30` | Accommodate parallel tests and a CI retry |
+| `RATE_PER_MINUTE` / `RATE_BURST` | `120` / `30` | Accommodate parallel tests and retries |
 
 Public variables are embedded during the E2E production build. Run `npm run build`
 again with your normal environment before using that checkout's production output
@@ -58,10 +58,9 @@ coverage target; Firefox, WebKit, and mobile behavior are not covered by this su
 
 Run `npm run test:e2e -- --list` to list tests or append `--grep browser` to run
 the Worker case. Failures retain traces and screenshots in `test-results/`; view
-the HTML report using `npx playwright show-report`. CI uploads reports for seven
-days, including traces on failure. All test artifacts are ignored by Git.
+the HTML report using `npx playwright show-report`. All test artifacts are ignored by Git.
 
-# Other CI checks
+# Other checks
 
 From `web/`, run `npm run lint`, `npm run typecheck`, `npm test`, and
 `npm run build`. From `server/`, run `go mod download`, `go mod verify`, and
@@ -71,14 +70,8 @@ From `web/`, run `npm run lint`, `npm run typecheck`, `npm test`, and
 npx --yes @fission-ai/openspec@1.6.0 validate --all --strict --no-interactive
 ```
 
-`.github/workflows/ci.yml` runs these checks in separate frontend, backend, specs,
-and E2E jobs for every PR and push to `main`. npm installs use the committed
-lockfile; Go uses `go.mod` and `go.sum`; the OpenSpec CLI is pinned to 1.6.0.
-The workflow grants only `contents: read` and does not require repository secrets.
+npm installs use the committed lockfile; Go uses `go.mod` and `go.sum`; the
+OpenSpec CLI is pinned to 1.6.0.
 
 Configuration references: [Next.js testing guide](https://nextjs.org/docs/app/guides/testing/playwright),
-[Playwright web servers](https://playwright.dev/docs/test-webserver),
-[setup-node](https://github.com/actions/setup-node),
-[setup-go](https://github.com/actions/setup-go),
-[checkout](https://github.com/actions/checkout), and
-[artifact uploads](https://github.com/actions/upload-artifact).
+and [Playwright web servers](https://playwright.dev/docs/test-webserver).

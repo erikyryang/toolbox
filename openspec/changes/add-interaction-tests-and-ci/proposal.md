@@ -1,12 +1,11 @@
 ## Why
 
-Os testes existentes verificam motores e renderização estática, mas não exercitam fluxos reais no navegador; o repositório não executa verificações automaticamente em PRs.
+Os testes existentes verificam motores e renderização estática, mas não exercitam fluxos reais no navegador.
 
 ## What Changes
 
 - Adicionar testes de navegador para navegação, conversão, idioma e compressão/extração com Worker real.
 - Adicionar teste de integração com o serviço Go usando dados sintéticos e ambiente isolado.
-- Configurar CI para lint, tipos, testes, build e verificação OpenSpec, além da suíte de navegador.
 
 ## Capabilities
 
@@ -20,6 +19,6 @@ Nenhuma alteração adicional de requisitos existentes fora dos deltas já ident
 
 ## Impact
 
-Novos testes e configuração de E2E em web, scripts/package-lock, workflows GitHub Actions e documentação de execução. Sem alterar regras de produto.
+Novos testes e configuração de E2E em web, scripts/package-lock e documentação de execução. Sem alterar regras de produto.
 
 Branch: `test/interaction-coverage-and-ci`. Base: `main@9fc33af`. Esta melhoria terá PR próprio.

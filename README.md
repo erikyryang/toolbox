@@ -260,7 +260,7 @@ go test ./...
 go build ./cmd/toolbox-server
 ```
 
-Browser flows and CI:
+Browser flows:
 
 ```bash
 cd web
@@ -271,7 +271,7 @@ npm run test:e2e
 
 The E2E suite starts a production frontend and the real Go backend on isolated
 ports. See the [browser testing guide](web/e2e/README.md) for prerequisites,
-test-only limits, covered flows, reports, and the matching CI commands.
+test-only limits, covered flows, reports, and the matching commands.
 
 ## Configuration
 

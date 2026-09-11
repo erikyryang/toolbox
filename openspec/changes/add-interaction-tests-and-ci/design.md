@@ -1,6 +1,6 @@
 ## Context
 
-Os testes existentes verificam motores e renderização estática, mas não exercitam fluxos reais no navegador; o repositório não executa verificações automaticamente em PRs. Base inspecionada: main@9fc33af, após fetch e pull por fast-forward.
+Os testes existentes verificam motores e renderização estática, mas não exercitam fluxos reais no navegador. Base inspecionada: main@9fc33af, após fetch e pull por fast-forward.
 
 ## Goals / Non-Goals
 
@@ -8,13 +8,12 @@ Os testes existentes verificam motores e renderização estática, mas não exer
 
 - Adicionar testes de navegador para navegação, conversão, idioma e compressão/extração com Worker real.
 - Adicionar teste de integração com o serviço Go usando dados sintéticos e ambiente isolado.
-- Configurar CI para lint, tipos, testes, build e verificação OpenSpec, além da suíte de navegador.
 
 **Non-Goals:** expandir o catálogo de ferramentas, adicionar persistência ou alterar a identidade visual.
 
 ## Decisions
 
-Usar Playwright para fluxos completos com servidor Next e backend Go iniciados pela configuração de teste, portas próprias e fixtures sintéticas. Separar smoke local/Worker de integração HTTP; fixar uma variável de limite apropriada no ambiente E2E para exercitar roteamento sem arquivos gigantes. Executar contra build de produção quando viável. CI em pull_request e push main, permissões contents:read, lockfile npm e Go go.mod como fontes de versão. Evitar mudanças em componentes para acomodar testes.
+Usar Playwright para fluxos completos com servidor Next e backend Go iniciados pela configuração de teste, portas próprias e fixtures sintéticas. Separar smoke local/Worker de integração HTTP; fixar uma variável de limite apropriada no ambiente E2E para exercitar roteamento sem arquivos gigantes. Executar contra build de produção quando viável. Lockfile npm e Go go.mod como fontes de versão. Evitar mudanças em componentes para acomodar testes.
 
 ## Risks / Trade-offs
 
