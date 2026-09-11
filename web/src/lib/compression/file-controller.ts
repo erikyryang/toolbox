@@ -37,12 +37,12 @@ export type FileOperationMessages = {
   extract: string;
 };
 
-// Includes TAR's signature at offset 257 without reading the full file.
+// Inclui a assinatura TAR no offset 257 sem ler o arquivo inteiro.
 export const DETECTION_PREFIX_BYTES = Math.max(
   ...Object.values(FORMATS).flatMap((format) => format.magic.map((magic) => magic.offset + magic.bytes.length)),
 );
 
-/** Owns resources and publication; promises from obsolete generations never publish. */
+/** Controla recursos e estado; Promises de gerações antigas não publicam resultados. */
 export class FileOperationController {
   #state: FileOperationState = { files: [], busy: false };
   #listeners = new Set<() => void>();
@@ -88,7 +88,7 @@ export class FileOperationController {
 
   dispose = () => { this.#invalidate(); };
 
-  /** Changing execution options also cancels a running operation. */
+  /** Alterar opções de execução também cancela a operação em andamento. */
   configure(files = this.#state.files) {
     this.#invalidate();
     this.#publish({ files, result: undefined, error: undefined, busy: false });

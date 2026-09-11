@@ -28,3 +28,17 @@ Publicar em PR próprio a partir da main atualizada. Manter a mudança ativa dur
 
 Nenhuma decisão de produto pendente. Detalhes de implementação serão resolvidos com base nos testes e registrados neste design quando materiais.
 
+## Revisão e validação
+
+O workspace de arquivos é identificado pelo slug em `CompressionRoute`: navegar
+para outra ferramenta desmonta o controlador anterior e reinicia formato,
+seleção e estado. Alterar apenas o idioma preserva o workspace. A assinatura
+lida corresponde ao maior offset declarado em `FORMATS`, incluindo TAR, em vez
+de usar uma quantidade de bytes arbitrária.
+
+Lint, typecheck e os 296 testes frontend (17 arquivos) passaram na revisão.
+Os novos testes cobrem Blob e ArrayBuffer no transporte, leitura limitada,
+reprocessamento local, reset durante leitura, cancelamento HTTP e Worker,
+seleção concorrente e respostas antigas. A saída para download continua
+materializada em memória; esta mudança elimina a leitura integral antecipada
+da entrada que seguirá para o servidor.
