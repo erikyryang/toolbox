@@ -80,13 +80,6 @@ export function FileWorkspace({
   const inputId = useId();
   const pasteId = useId();
   const errorId = useId();
-  const messages = {
-    unavailable: () => message("en", "error.backendUnavailable"),
-    read: message("en", "error.unknown"),
-    compress: message("en", "error.unknown"),
-    extract: message("en", "error.unknown"),
-  };
-
   const preset = (typeof options.preset === "string" ? options.preset : "balanced") as Preset;
   const customLevel = Number(options.level ?? 6);
   const compressing = mode === "compress";
@@ -192,7 +185,7 @@ export function FileWorkspace({
       code: decoded.dataUrl ? "note.pastedDataUrl" : "note.pasted",
       params: { encoding: TEXT_ENCODING_LABELS[decoded.encoding], format: FORMATS[decoded.format].label, size: formatBytes(selected.size) },
     });
-    await controller.select([selected], true, messages, decoded.format);
+    await controller.select([selected], true, decoded.format);
   }
 
   async function onSelect(list: FileList | null) {
@@ -200,17 +193,17 @@ export function FileWorkspace({
     setError(undefined);
     setPastedNote(undefined);
     const incoming = acceptsMany ? Array.from(list) : [list[0]];
-    await controller.select(incoming.map((file) => ({ name: file.name, size: file.size, blob: file })), !compressing, messages);
+    await controller.select(incoming.map((file) => ({ name: file.name, size: file.size, blob: file })), !compressing);
   }
 
   async function runCompress() {
     setError(undefined);
-    await controller.compress(format, preset, level, messages);
+    await controller.compress(format, preset, level);
   }
 
   async function extractEntry(entryName?: string) {
     setError(undefined);
-    await controller.extract(entryName, messages);
+    await controller.extract(entryName);
   }
 
   function download() {

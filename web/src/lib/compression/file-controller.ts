@@ -2,7 +2,7 @@ import type { Archive } from "./codecs";
 import type { FormatId } from "./formats";
 import { FORMATS } from "./formats";
 import { detectFormat } from "./detect";
-import { decideRouting, type RoutingDecision } from "./limits";
+import { decideRouting } from "./limits";
 import { OperationError } from "../engines/errors";
 import { feedbackOf, type Feedback } from "../messages";
 
@@ -13,7 +13,6 @@ export type FileOperationState = {
   archive?: Archive;
   detectedFormat?: FormatId;
   result?: FileResult;
-  error?: string;
   feedback?: Feedback;
   busy: boolean;
 };
@@ -31,13 +30,6 @@ export type FileOperationDependencies = {
   inspectOnServer(data: Blob, signal: AbortSignal): Promise<Archive>;
   compressOnServer(format: FormatId, preset: string, level: number, files: { name: string; data: Blob }[], signal: AbortSignal): Promise<Uint8Array>;
   extractOnServer(data: Blob, entryName: string | undefined, signal: AbortSignal): Promise<Uint8Array>;
-};
-
-export type FileOperationMessages = {
-  unavailable(decision: RoutingDecision): string;
-  read: string;
-  compress: string;
-  extract: string;
 };
 
 // Inclui a assinatura TAR no offset 257 sem ler o arquivo inteiro.
@@ -62,8 +54,6 @@ export class FileOperationController {
   };
 
   #publish(patch: Partial<FileOperationState>) {
-    // Keep the legacy diagnostic string while presentation consumes the code.
-    if (Object.hasOwn(patch, "error") && patch.error === undefined) patch.feedback = undefined;
     this.#state = { ...this.#state, ...patch };
     for (const listener of this.#listeners) listener();
   }
@@ -88,7 +78,7 @@ export class FileOperationController {
 
   reset = () => {
     this.#invalidate();
-    this.#publish({ files: [], archive: undefined, detectedFormat: undefined, result: undefined, error: undefined, busy: false });
+    this.#publish({ files: [], archive: undefined, detectedFormat: undefined, result: undefined, feedback: undefined, busy: false });
   };
 
   dispose = () => { this.#invalidate(); };
@@ -96,12 +86,12 @@ export class FileOperationController {
   /** Alterar opções de execução também cancela a operação em andamento. */
   configure(files = this.#state.files) {
     this.#invalidate();
-    this.#publish({ files, result: undefined, error: undefined, busy: false });
+    this.#publish({ files, result: undefined, feedback: undefined, busy: false });
   }
 
-  async select(files: SelectedFile[], inspect: boolean, messages: FileOperationMessages, knownFormat?: FormatId) {
+  async select(files: SelectedFile[], inspect: boolean, knownFormat?: FormatId) {
     const task = this.#begin();
-    this.#publish({ files, archive: undefined, detectedFormat: undefined, result: undefined, error: undefined, busy: inspect && files.length > 0 });
+    this.#publish({ files, archive: undefined, detectedFormat: undefined, result: undefined, feedback: undefined, busy: inspect && files.length > 0 });
     if (!inspect || !files.length) return;
     const file = files[0];
     try {
@@ -120,17 +110,17 @@ export class FileOperationController {
       }
       if (task.current()) this.#publish({ archive });
     } catch (failure) {
-      if (task.current()) this.#publish({ error: failure instanceof Error ? failure.message : messages.read, feedback: feedbackOf(failure) });
+      if (task.current()) this.#publish({ feedback: feedbackOf(failure) });
     } finally {
       if (task.current()) this.#publish({ busy: false });
     }
   }
 
-  async compress(format: FormatId, preset: string, level: number, messages: FileOperationMessages) {
+  async compress(format: FormatId, preset: string, level: number) {
     const files = this.#state.files;
     if (!files.length) return;
     const task = this.#begin();
-    this.#publish({ busy: true, error: undefined, result: undefined });
+    this.#publish({ busy: true, feedback: undefined, result: undefined });
     try {
       const decision = decideRouting({ format, direction: "compress", sizeBytes: files.reduce((sum, file) => sum + file.size, 0), level });
       let bytes: Uint8Array;
@@ -144,17 +134,17 @@ export class FileOperationController {
       }
       if (task.current()) this.#publish({ result: { name: `${files.length === 1 ? files[0].name : "arquivos"}${FORMATS[format].extension}`, bytes } });
     } catch (failure) {
-      if (task.current()) this.#publish({ error: failure instanceof Error ? failure.message : messages.compress, feedback: feedbackOf(failure) });
+      if (task.current()) this.#publish({ feedback: feedbackOf(failure) });
     } finally {
       if (task.current()) this.#publish({ busy: false });
     }
   }
 
-  async extract(entryName: string | undefined, messages: FileOperationMessages) {
+  async extract(entryName: string | undefined) {
     const { archive, files } = this.#state;
     if (!archive || !files.length) return;
     const task = this.#begin();
-    this.#publish({ busy: true, error: undefined, result: undefined });
+    this.#publish({ busy: true, feedback: undefined, result: undefined });
     try {
       const decision = decideRouting({ format: archive.format, direction: "decompress", sizeBytes: files[0].size });
       let bytes: Uint8Array;
@@ -168,7 +158,7 @@ export class FileOperationController {
       }
       if (task.current()) this.#publish({ result: { name: entryName?.split("/").pop() ?? archive.entries[0]?.name ?? files[0].name, bytes } });
     } catch (failure) {
-      if (task.current()) this.#publish({ error: failure instanceof Error ? failure.message : messages.extract, feedback: feedbackOf(failure) });
+      if (task.current()) this.#publish({ feedback: feedbackOf(failure) });
     } finally {
       if (task.current()) this.#publish({ busy: false });
     }
