@@ -1,5 +1,7 @@
 "use client";
 
+import { message } from "@/lib/messages";
+
 import { ChevronRight } from "lucide-react";
 
 import { OptionField } from "@/components/option-field";
@@ -36,7 +38,7 @@ export function AdvancedOptions({
           aria-hidden
           className="size-3.5 transition-transform group-open:rotate-90"
         />
-        {language === "pt" ? "Opções avançadas" : "Advanced options"}
+        {message(language, "ui.advancedOptions")}
       </summary>
 
       <div className="flex flex-col gap-4 pt-4 sm:flex-row sm:flex-wrap sm:gap-8">
@@ -73,7 +75,7 @@ export function PrimaryOptions({
   return (
     <div
       role="group"
-      aria-label={language === "pt" ? "Opções da operação" : "Operation options"}
+      aria-label={message(language, "ui.operationOptions")}
       className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-start sm:gap-8"
     >
       {options.map((option) => (

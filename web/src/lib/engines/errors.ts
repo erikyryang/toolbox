@@ -1,15 +1,23 @@
 /**
- * Erro de operação: mensagem legível, exibida como texto simples abaixo do
- * campo de entrada. Nunca vira toast, modal ou alerta.
+ * Erro de operação: um código do catálogo e seus parâmetros, exibidos como
+ * texto simples abaixo do campo de entrada. Nunca vira toast, modal ou alerta.
+ *
+ * O motor não conhece o idioma de quem lê — quem resolve o código é a
+ * apresentação. `Error.message` fica em inglês, para log e devtools; a
+ * interface nunca o mostra.
  */
+import { message, type Feedback } from "../messages.ts";
+
 export class OperationError extends Error {
   /** Posição (base 0) na entrada onde o problema foi detectado, se houver. */
   readonly position?: number;
+  readonly feedback: Feedback;
 
-  constructor(message: string, position?: number) {
-    super(message);
+  constructor(feedback: Feedback, position = feedback.position) {
+    super(message("en", feedback.code, feedback.params));
     this.name = "OperationError";
     this.position = position;
+    this.feedback = { ...feedback, position };
   }
 }
 

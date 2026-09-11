@@ -1,6 +1,7 @@
 import { DATA_UNITS, UNIT_LABELS, type DataUnit } from "./data-size-units.ts";
 import { OperationError } from "./errors.ts";
 import type { Engine, EngineResult, OptionValues } from "../operations/types.ts";
+import type { Feedback } from "../messages.ts";
 
 /**
  * Conversão entre unidades de tamanho de dados.
@@ -79,14 +80,12 @@ export function parseValue(raw: string): number | undefined {
   if (PARTIAL_PATTERN.test(text)) return undefined;
 
   if (!VALUE_PATTERN.test(text)) {
-    throw new OperationError(
-      `Não é um número reconhecível: "${text}". Esperado um valor como 1024 ou 1.5.`,
-    );
+    throw new OperationError({ code: "error.number" });
   }
 
   const value = Number(text.replace(",", "."));
   if (!Number.isFinite(value)) {
-    throw new OperationError(`Número fora de faixa: "${text}".`);
+    throw new OperationError({ code: "error.numberRange" });
   }
 
   return value;
@@ -125,17 +124,16 @@ function readBase(value: unknown): Base {
  * se chamam KB, MB, GB e TB nos dois modos: o rótulo não muda com a base, mas
  * o significado sim, e o usuário precisa poder conferir o número fora daqui.
  */
-function conventionNote(from: DataUnit, to: DataUnit, base: Base): string | undefined {
+function conventionNote(from: DataUnit, to: DataUnit, base: Base): Feedback | undefined {
   const scaled = [...new Set([from, to])].filter((unit) => IEC_LABELS[unit] !== undefined);
   if (scaled.length === 0) return undefined;
 
-  if (base === 1024) {
-    const equivalences = scaled.map((unit) => `${UNIT_LABELS[unit]} = ${IEC_LABELS[unit]}`);
-    return `Base binária (1024): ${equivalences.join(", ")}.`;
-  }
-
-  const names = scaled.map((unit) => UNIT_LABELS[unit]);
-  return `Base decimal (1000): ${names.join(" e ")} no sentido SI, e não os degraus de 1024 que o sistema operacional reporta.`;
+  const units = scaled.map((unit) =>
+    base === 1024 ? `${UNIT_LABELS[unit]} = ${IEC_LABELS[unit]}` : UNIT_LABELS[unit]);
+  return {
+    code: base === 1024 ? "note.binaryBase" : "note.decimalBase",
+    params: { units: units.join(", ") },
+  };
 }
 
 function convert(input: string, from: DataUnit, to: DataUnit, base: Base): EngineResult {

@@ -1,5 +1,7 @@
 "use client";
 
+import { message } from "@/lib/messages";
+
 import { useEffect, useState } from "react";
 import { Check, Copy } from "lucide-react";
 
@@ -39,7 +41,7 @@ export function CopyButton({
     }
   }
 
-  const what = label ?? { pt: "saída", en: "output" };
+  const target = label?.[language] ?? message(language, "ui.output");
 
   return (
     <Button
@@ -49,15 +51,15 @@ export function CopyButton({
       disabled={value === ""}
       aria-label={
         copied
-          ? language === "pt" ? "Copiado" : "Copied"
-          : language === "pt" ? `Copiar ${what.pt}` : `Copy ${what.en}`
+          ? message(language, "ui.copied")
+          : message(language, "ui.copyTarget", { target })
       }
     >
       {copied ? <Check aria-hidden /> : <Copy aria-hidden />}
       <span>
         {copied
-          ? language === "pt" ? "Copiado" : "Copied"
-          : language === "pt" ? "Copiar" : "Copy"}
+          ? message(language, "ui.copied")
+          : message(language, "ui.copy")}
       </span>
     </Button>
   );

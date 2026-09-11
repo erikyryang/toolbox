@@ -3,6 +3,7 @@
 import type { Archive } from "./codecs.ts";
 import type { FormatId } from "./formats.ts";
 import type { WorkerRequest, WorkerResponse } from "./worker.ts";
+import { OperationError } from "../engines/errors.ts";
 
 /** Omit sobre união precisa distribuir, ou os ramos colapsam num tipo só. */
 type WithoutId<T> = T extends { id: number } ? Omit<T, "id"> : never;
@@ -33,9 +34,9 @@ export class CompressionClient {
         this.#pending.delete(event.data.id);
         entry.resolve(event.data);
       };
-      this.#worker.onerror = (event) => {
+      this.#worker.onerror = () => {
         for (const [, entry] of this.#pending) {
-          entry.reject(new Error(event.message || "O worker falhou."));
+          entry.reject(new OperationError({ code: "error.worker" }));
         }
         this.#pending.clear();
       };
@@ -62,23 +63,23 @@ export class CompressionClient {
     // worker os desconectaria daqui e impediria repetir a compactação ou
     // mudar o nível sem selecionar os arquivos de novo.
     const response = await this.#send({ kind: "compress", format, level, files });
-    if (!response.ok) throw new Error(response.error);
-    if (response.kind !== "compress") throw new Error("Resposta inesperada do worker.");
+    if (!response.ok) throw new OperationError(response.feedback);
+    if (response.kind !== "compress") throw new OperationError({ code: "error.workerResponse" });
     return new Uint8Array(response.data);
   }
 
   async inspect(data: ArrayBuffer, fileName?: string): Promise<Archive> {
     // O buffer não é transferido: a extração seguinte precisa dele de volta.
     const response = await this.#send({ kind: "inspect", data, fileName });
-    if (!response.ok) throw new Error(response.error);
-    if (response.kind !== "inspect") throw new Error("Resposta inesperada do worker.");
+    if (!response.ok) throw new OperationError(response.feedback);
+    if (response.kind !== "inspect") throw new OperationError({ code: "error.workerResponse" });
     return response.archive;
   }
 
   async extract(data: ArrayBuffer, archive: Archive, entryName?: string): Promise<Uint8Array> {
     const response = await this.#send({ kind: "extract", data, archive, entryName });
-    if (!response.ok) throw new Error(response.error);
-    if (response.kind !== "extract") throw new Error("Resposta inesperada do worker.");
+    if (!response.ok) throw new OperationError(response.feedback);
+    if (response.kind !== "extract") throw new OperationError({ code: "error.workerResponse" });
     return new Uint8Array(response.data);
   }
 
@@ -90,7 +91,7 @@ export class CompressionClient {
     this.#worker?.terminate();
     this.#worker = undefined;
     for (const [, entry] of this.#pending) {
-      entry.reject(new Error("Operação cancelada."));
+      entry.reject(new OperationError({ code: "error.cancelled" }));
     }
     this.#pending.clear();
   }

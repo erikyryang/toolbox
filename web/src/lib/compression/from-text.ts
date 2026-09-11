@@ -87,21 +87,17 @@ export function decodeArchiveText(input: string): DecodedArchive {
   const trimmed = input.trim();
 
   if (trimmed === "") {
-    throw new OperationError("Cole o conteúdo do arquivo compactado para continuar.");
+    throw new OperationError({ code: "error.pasteEmpty" });
   }
   if (trimmed.length > MAX_PASTED_CHARS) {
-    throw new OperationError(
-      "O texto colado é grande demais para ser decodificado aqui. Salve-o como arquivo e use o seletor.",
-    );
+    throw new OperationError({ code: "error.pasteLarge" });
   }
 
   const { payload, dataUrl } = stripDataUrl(trimmed);
   const decoded = attempts(payload);
 
   if (decoded.length === 0) {
-    throw new OperationError(
-      "O texto não é Base64 nem hexadecimal válido. Cole o arquivo compactado codificado em uma dessas formas.",
-    );
+    throw new OperationError({ code: "error.pasteEncoding" });
   }
 
   for (const attempt of decoded) {
@@ -116,10 +112,7 @@ export function decodeArchiveText(input: string): DecodedArchive {
   // Base64 de um PNG precisa saber que o problema é o conteúdo, não o formato
   // do texto.
   const best = decoded[0];
-  throw new OperationError(
-    `O texto foi lido como ${TEXT_ENCODING_LABELS[best.encoding]} e produziu ${best.bytes.length} byte(s), ` +
-      `mas os primeiros são ${describeSignature(best.bytes)}, que não correspondem a nenhum formato suportado.`,
-  );
+  throw new OperationError({ code: "error.pasteFormat", params: { encoding: TEXT_ENCODING_LABELS[best.encoding], size: best.bytes.length, signature: describeSignature(best.bytes) } });
 }
 
 /** Nome sintético para o conteúdo colado, com a extensão do formato lido. */

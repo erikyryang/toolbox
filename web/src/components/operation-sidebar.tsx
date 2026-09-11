@@ -1,5 +1,7 @@
 "use client";
 
+import { message } from "@/lib/messages";
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -17,13 +19,13 @@ export function OperationSidebar({
 
   return (
     <aside className="sticky top-[var(--header-height)] hidden h-[calc(100vh-var(--header-height))] w-[var(--sidebar-width)] shrink-0 overflow-y-auto border-r border-border bg-surface-raised px-[var(--sidebar-gutter)] py-5 lg:block">
-      <nav aria-label={language === "pt" ? "Ferramentas" : "Tools"} className="flex flex-col gap-6">
+      <nav aria-label={message(language, "ui.tools")} className="flex flex-col gap-6">
         <Link
           href="/"
           aria-current={pathname === "/" ? "page" : undefined}
           className="rounded-md px-2.5 py-1.5 text-sm text-text-muted transition-colors hover:bg-surface hover:text-text aria-[current=page]:bg-surface aria-[current=page]:font-semibold aria-[current=page]:text-text"
         >
-          {language === "pt" ? "Visão geral" : "Overview"}
+          {message(language, "ui.overview")}
         </Link>
 
         {groups.map(({ group, items }) => {

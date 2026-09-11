@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { feedbackFrom } from "../messages.testing.ts";
 
 import {
   decodeBase32,
@@ -23,7 +24,7 @@ describe("Base32", () => {
   });
 
   it("recusa caractere fora do alfabeto", () => {
-    expect(() => decodeBase32("ORXW1")).toThrow(/Base32/);
+    expect(feedbackFrom(() => decodeBase32("ORXW1")).code).toBe("error.base32Character");
   });
 });
 
@@ -40,7 +41,7 @@ describe("Base58", () => {
 
   it("recusa os caracteres ambíguos do alfabeto", () => {
     for (const char of ["0", "O", "I", "l"]) {
-      expect(() => decodeBase58(`ab${char}cd`), char).toThrow(/ambíguos/);
+      expect(feedbackFrom(() => decodeBase58(`ab${char}cd`)).code, char).toBe("error.base58Character");
     }
   });
 });

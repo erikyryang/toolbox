@@ -1,5 +1,7 @@
 "use client";
 
+import { message } from "@/lib/messages";
+
 import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -55,12 +57,12 @@ export function OperationMenu({
   return (
     <details ref={ref} className="relative">
       <summary className="flex cursor-pointer list-none items-center gap-1.5 rounded-md border border-border px-2 py-1 text-xs uppercase leading-normal tracking-label text-text transition-colors hover:border-accent hover:text-accent-text [&::-webkit-details-marker]:hidden">
-        {language === "pt" ? "Operações" : "Tools"}
+        {message(language, "ui.tools")}
         <ChevronDown aria-hidden className="size-3.5" />
       </summary>
 
       <nav
-        aria-label={language === "pt" ? "Operações" : "Tools"}
+        aria-label={message(language, "ui.tools")}
         className="absolute left-0 top-full z-20 mt-1 min-w-56 rounded-md border border-border bg-surface-raised p-1.5"
       >
         {groups.map(({ group, items }) => (

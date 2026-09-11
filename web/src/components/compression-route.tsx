@@ -23,6 +23,7 @@ export function CompressionRoute({ slug }: { slug: string }) {
 
   return (
     <FileWorkspace
+      key={operation.slug}
       operation={localizeOperation(operation, language)}
       mode={decompressing ? "decompress" : "compress"}
       initialFormat={formatForSlug(slug)}

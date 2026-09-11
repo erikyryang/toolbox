@@ -1,34 +1,30 @@
 "use client";
 
-import { useCallback, useEffect, useId, useRef, useState } from "react";
-import { Download, Loader2, Upload, X } from "lucide-react";
+import { useCallback, useId, useState } from "react";
+import { Loader2, X } from "lucide-react";
+import { feedbackOf, localizeFeedback, message, type Feedback } from "@/lib/messages";
 
+import { FileInput } from "@/components/file-input";
+import { FileResults } from "@/components/file-results";
 import { AdvancedOptions } from "@/components/advanced-options";
 import { PrivacyNote } from "@/components/privacy-note";
 import { PythonScriptPanel } from "@/components/python-script";
 import { OperationHeading } from "@/components/operation-heading";
 import { Button } from "@/components/ui/button";
-import {
-  backendAvailable,
-  compressOnServer,
-  extractOnServer,
-  inspectOnServer,
-} from "@/lib/compression/backend";
-import { CompressionClient } from "@/lib/compression/client";
-import type { Archive } from "@/lib/compression/codecs";
+import { backendAvailable } from "@/lib/compression/backend";
+import { useFileOperation } from "@/hooks/use-file-operation";
+import type { SelectedFile } from "@/lib/compression/file-controller";
 import {
   COMPRESSIBLE_FORMATS,
   FORMATS,
-  PRESET_LABELS,
   clampLevel,
   levelForPreset,
   type FormatId,
   type Preset,
 } from "@/lib/compression/formats";
-import { detectFormat } from "@/lib/compression/detect";
 import { TEXT_ENCODING_LABELS, decodeArchiveText, pastedFileName } from "@/lib/compression/from-text";
 import { levelOptionsFor } from "@/lib/operations/compression-catalog";
-import { CLIENT_MAX_BYTES, decideRouting, formatBytes, type RoutingDecision } from "@/lib/compression/limits";
+import { decideRouting, formatBytes, type RoutingDecision } from "@/lib/compression/limits";
 import type { OperationMeta, OptionValue, OptionValues } from "@/lib/operations/types";
 import { defaultOptionValues } from "@/lib/operations/types";
 import { cn } from "@/lib/utils";
@@ -46,7 +42,6 @@ function optionValuesFor(format: FormatId): OptionValues {
   return values;
 }
 
-type Selected = { name: string; size: number; data: ArrayBuffer };
 
 /**
  * A tela das operações de arquivo.
@@ -74,32 +69,17 @@ export function FileWorkspace({
       ? optionValuesFor(initialFormat ?? "zip")
       : defaultOptionValues(operation),
   );
-  const [files, setFiles] = useState<Selected[]>([]);
-  const [archive, setArchive] = useState<Archive | undefined>();
-  const [detectedFormat, setDetectedFormat] = useState<FormatId | undefined>();
-  const [busy, setBusy] = useState(false);
+  const { files, archive, detectedFormat, result, feedback: operationError, busy, controller } = useFileOperation();
   const [dragging, setDragging] = useState(false);
   const [source, setSource] = useState<Source>("file");
   const [pasted, setPasted] = useState("");
-  const [pastedNote, setPastedNote] = useState<string | undefined>();
-  const [error, setError] = useState<string | undefined>();
-  const [result, setResult] = useState<{ name: string; bytes: Uint8Array } | undefined>();
+  const [pastedNote, setPastedNote] = useState<Feedback | undefined>();
+  const [error, setError] = useState<Feedback | undefined>();
+  const visibleError = error ?? operationError;
 
   const inputId = useId();
   const pasteId = useId();
   const errorId = useId();
-  const clientRef = useRef<CompressionClient | undefined>(undefined);
-
-  function client(): CompressionClient {
-    clientRef.current ??= new CompressionClient();
-    return clientRef.current;
-  }
-
-  // Sair da tela leva embora o worker, o módulo WASM e os buffers.
-  useEffect(() => {
-    return () => clientRef.current?.terminate();
-  }, []);
-
   const preset = (typeof options.preset === "string" ? options.preset : "balanced") as Preset;
   const customLevel = Number(options.level ?? 6);
   const compressing = mode === "compress";
@@ -131,25 +111,22 @@ export function FileWorkspace({
   function changeFormat(next: FormatId) {
     if (next === format) return;
     setFormat(next);
-    setResult(undefined);
     setOptions((current) => ({ ...optionValuesFor(next), preset: current.preset ?? "balanced" }));
 
-    if (!FORMATS[next].container && files.length > 1) {
-      const kept = files[0];
-      setFiles([kept]);
-      setError(
-        language === "pt"
-          ? `${FORMATS[next].label} compacta um arquivo por vez — os outros foram dispensados e só "${kept.name}" continua selecionado.`
-          : `${FORMATS[next].label} compresses one file at a time — the others were dropped and only "${kept.name}" is still selected.`,
-      );
-    } else {
-      setError(undefined);
-    }
+    const dropping = !FORMATS[next].container && files.length > 1;
+    const kept = dropping ? [files[0]] : files;
+    controller.configure(kept);
+    setError(
+      dropping
+        ? { code: "note.filesDropped", params: { format: FORMATS[next].label, name: kept[0].name } }
+        : undefined,
+    );
   }
 
   const setOption = useCallback((id: string, value: OptionValue) => {
+    controller.configure();
     setOptions((current) => ({ ...current, [id]: value }));
-  }, []);
+  }, [controller]);
 
   /**
    * Arrastar e soltar. A área já tinha a aparência de um alvo de arraste —
@@ -163,14 +140,8 @@ export function FileWorkspace({
   }
 
   function reset() {
-    clientRef.current?.terminate();
-    clientRef.current = undefined;
-    setFiles([]);
-    setArchive(undefined);
-    setDetectedFormat(undefined);
-    setResult(undefined);
+    controller.reset();
     setError(undefined);
-    setBusy(false);
     setDragging(false);
     setPastedNote(undefined);
   }
@@ -191,132 +162,48 @@ export function FileWorkspace({
    */
   async function readPasted() {
     setError(undefined);
-    setResult(undefined);
-    setArchive(undefined);
+    controller.reset();
     setPastedNote(undefined);
 
     let decoded;
     try {
       decoded = decodeArchiveText(pasted);
     } catch (failure) {
-      setError(failure instanceof Error ? failure.message : "Não foi possível ler o texto.");
+      setError(feedbackOf(failure));
       return;
     }
 
     const name = pastedFileName(decoded.format, language);
     // A cópia isola os bytes do buffer do worker, que pode ser transferido.
-    const selected: Selected = {
+    const selected: SelectedFile = {
       name,
       size: decoded.bytes.length,
-      data: decoded.bytes.slice().buffer as ArrayBuffer,
+      blob: new Blob([decoded.bytes.slice().buffer as ArrayBuffer]),
     };
 
-    setPastedNote(
-      language === "pt"
-        ? `Lido como ${TEXT_ENCODING_LABELS[decoded.encoding]}${decoded.dataUrl ? " dentro de um data: URL" : ""} — ${FORMATS[decoded.format].label}, ${formatBytes(selected.size)}.`
-        : `Read as ${TEXT_ENCODING_LABELS[decoded.encoding]}${decoded.dataUrl ? " inside a data: URL" : ""} — ${FORMATS[decoded.format].label}, ${formatBytes(selected.size)}.`,
-    );
-    setDetectedFormat(decoded.format);
-    setFiles([selected]);
-    await inspectFile(selected, decoded.format);
+    setPastedNote({
+      code: decoded.dataUrl ? "note.pastedDataUrl" : "note.pasted",
+      params: { encoding: TEXT_ENCODING_LABELS[decoded.encoding], format: FORMATS[decoded.format].label, size: formatBytes(selected.size) },
+    });
+    await controller.select([selected], true, decoded.format);
   }
 
   async function onSelect(list: FileList | null) {
     if (!list || list.length === 0) return;
-
     setError(undefined);
-    setResult(undefined);
-    setArchive(undefined);
-
-    // O atributo `multiple` do input já limita a escolha pelo seletor, mas o
-    // arrastar não passa por ele: aqui a regra vale para os dois caminhos.
+    setPastedNote(undefined);
     const incoming = acceptsMany ? Array.from(list) : [list[0]];
-    const selected: Selected[] = [];
-    for (const file of incoming) {
-      selected.push({ name: file.name, size: file.size, data: await file.arrayBuffer() });
-    }
-    const detected = mode === "decompress"
-      ? detectFormat(new Uint8Array(selected[0].data))
-      : undefined;
-    setDetectedFormat(detected);
-    setFiles(selected);
-
-    if (mode === "decompress") {
-      await inspectFile(selected[0], detected);
-    }
-  }
-
-  async function inspectFile(file: Selected, formatFromSignature?: FormatId) {
-    const decision = decideRouting({
-      format: formatFromSignature ?? "zip",
-      direction: "decompress",
-      sizeBytes: file.size,
-    });
-    if (decision.where === "server" && !backendAvailable()) {
-      setError(backendUnavailable(decision, language));
-      return;
-    }
-
-    setBusy(true);
-    try {
-      setArchive(
-        decision.where === "server"
-          ? await inspectOnServer(file.data)
-          : await client().inspect(file.data, file.name),
-      );
-    } catch (failure) {
-      setError(failure instanceof Error ? failure.message : language === "pt" ? "Falha ao ler o arquivo." : "Could not read the file.");
-    } finally {
-      setBusy(false);
-    }
+    await controller.select(incoming.map((file) => ({ name: file.name, size: file.size, blob: file })), !compressing);
   }
 
   async function runCompress() {
-    if (files.length === 0) return;
-
-    if (routing.where === "server" && !backendAvailable()) {
-      setError(backendUnavailable(routing, language));
-      return;
-    }
-
-    setBusy(true);
     setError(undefined);
-    try {
-      const payload = files.map((file) => ({ name: file.name, data: file.data }));
-      const bytes =
-        routing.where === "server"
-          ? await compressOnServer(format, preset, level, payload)
-          : await client().compress(format, level, payload);
-      const base = files.length === 1 ? files[0].name : "arquivos";
-      setResult({ name: `${base}${FORMATS[format].extension}`, bytes });
-    } catch (failure) {
-      setError(failure instanceof Error ? failure.message : language === "pt" ? "Falha ao compactar." : "Could not compress the files.");
-    } finally {
-      setBusy(false);
-    }
+    await controller.compress(format, preset, level);
   }
 
   async function extractEntry(entryName?: string) {
-    if (!archive || files.length === 0) return;
-
-    setBusy(true);
     setError(undefined);
-    try {
-      const decision = decideRouting({
-        format: archive.format,
-        direction: "decompress",
-        sizeBytes: files[0].size,
-      });
-      const bytes =
-        decision.where === "server"
-          ? await extractOnServer(files[0].data, entryName)
-          : await client().extract(files[0].data, archive, entryName);
-      setResult({ name: entryName?.split("/").pop() ?? archive.entries[0].name, bytes });
-    } catch (failure) {
-      setError(failure instanceof Error ? failure.message : language === "pt" ? "Falha ao extrair." : "Could not extract the file.");
-    } finally {
-      setBusy(false);
-    }
+    await controller.extract(entryName);
   }
 
   function download() {
@@ -345,12 +232,12 @@ export function FileWorkspace({
         {compressing ? (
           <section className="flex flex-col gap-2">
             <h2 className="section-title">
-              {language === "pt" ? "Formato" : "Format"}
+              {message(language, "ui.format")}
             </h2>
             <div className="flex flex-wrap items-center gap-3">
               <div
                 role="group"
-                aria-label={language === "pt" ? "Formato de saída" : "Output format"}
+                aria-label={message(language, "ui.outputFormat")}
                 className="inline-flex flex-wrap rounded-md border border-border-interactive p-0.5"
               >
                 {COMPRESSIBLE_FORMATS.map((option) => {
@@ -375,13 +262,11 @@ export function FileWorkspace({
               </div>
               <p className="text-xs text-text-muted">
                 {FORMATS[format].container
-                  ? (language === "pt" ? "Guarda vários arquivos." : "Holds several files.")
-                  : (language === "pt" ? "Um arquivo por vez." : "One file at a time.")}
+                  ? (message(language, "ui.holdsSeveralFiles"))
+                  : (message(language, "ui.oneFileAtATime"))}
                 {FORMATS[format].levels
-                  ? (language === "pt"
-                      ? ` Nível ${FORMATS[format].levels.min}–${FORMATS[format].levels.max}.`
-                      : ` Level ${FORMATS[format].levels.min}–${FORMATS[format].levels.max}.`)
-                  : (language === "pt" ? " Sem compressão: só junta." : " No compression: it only bundles.")}
+                  ? message(language, "ui.levelRange", { min: FORMATS[format].levels.min, max: FORMATS[format].levels.max })
+                  : (message(language, "ui.noCompression"))}
               </p>
             </div>
           </section>
@@ -390,12 +275,12 @@ export function FileWorkspace({
         {!compressing ? (
           <section className="flex flex-col gap-2">
             <h2 className="section-title">
-              {language === "pt" ? "Origem" : "Source"}
+              {message(language, "ui.source")}
             </h2>
             <div className="flex flex-wrap items-center gap-3">
               <div
                 role="group"
-                aria-label={language === "pt" ? "Origem do arquivo" : "Where the archive comes from"}
+                aria-label={message(language, "ui.sourceGroup")}
                 className="inline-flex rounded-md border border-border-interactive p-0.5"
               >
                 {(["file", "text"] as Source[]).map((option) => {
@@ -414,18 +299,16 @@ export function FileWorkspace({
                       )}
                     >
                       {option === "file"
-                        ? (language === "pt" ? "Arquivo" : "File")
-                        : (language === "pt" ? "Texto" : "Text")}
+                        ? (message(language, "ui.file"))
+                        : (message(language, "ui.text"))}
                     </button>
                   );
                 })}
               </div>
               <p className="text-xs text-text-muted">
                 {source === "file"
-                  ? (language === "pt" ? "Escolhido do disco ou arrastado." : "Chosen from disk or dragged in.")
-                  : (language === "pt"
-                      ? "Base64, hexadecimal ou data: URL — a codificação é detectada."
-                      : "Base64, hex, or a data: URL — the encoding is detected.")}
+                  ? (message(language, "ui.sourceFileHint"))
+                  : (message(language, "ui.sourceTextHint"))}
               </p>
             </div>
           </section>
@@ -434,7 +317,7 @@ export function FileWorkspace({
         {source === "text" && !compressing ? (
           <section className="flex flex-col gap-3">
             <label htmlFor={pasteId} className="section-title">
-              {language === "pt" ? "Conteúdo codificado" : "Encoded contents"}
+              {message(language, "ui.encodedContents")}
             </label>
             <textarea
               id={pasteId}
@@ -445,7 +328,7 @@ export function FileWorkspace({
               autoCorrect="off"
               autoCapitalize="off"
               placeholder="UEsDBAoAAAAAAA..."
-              aria-describedby={error ? errorId : undefined}
+              aria-describedby={visibleError ? errorId : undefined}
               className="min-h-32 w-full resize-y rounded-md border border-border-interactive bg-surface-raised p-4 text-sm leading-relaxed text-text placeholder:text-text-muted md:min-h-40"
             />
             <div className="flex flex-wrap items-center gap-3">
@@ -456,81 +339,24 @@ export function FileWorkspace({
                 disabled={busy || pasted.trim() === ""}
               >
                 {busy ? <Loader2 aria-hidden className="animate-spin" /> : null}
-                <span>{language === "pt" ? "Abrir" : "Open"}</span>
+                <span>{message(language, "ui.open")}</span>
               </Button>
               {pasted !== "" ? (
                 <Button variant="ghost" size="sm" onClick={() => { setPasted(""); reset(); }}>
                   <X aria-hidden />
-                  <span>{language === "pt" ? "Limpar" : "Clear"}</span>
+                  <span>{message(language, "ui.clear")}</span>
                 </Button>
               ) : null}
-              {pastedNote ? <p className="text-xs text-text-muted">{pastedNote}</p> : null}
+              {pastedNote ? <p className="text-xs text-text-muted">{localizeFeedback(pastedNote, language)}</p> : null}
             </div>
           </section>
         ) : (
-        <section className="flex flex-col gap-3">
-          <label
-            htmlFor={inputId}
-            onDragEnter={(event) => { event.preventDefault(); setDragging(true); }}
-            onDragOver={(event) => { event.preventDefault(); setDragging(true); }}
-            onDragLeave={(event) => {
-              // Só sai do estado quando o ponteiro deixa a área inteira, não ao
-              // cruzar a fronteira de um filho.
-              if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDragging(false);
-            }}
-            onDrop={onDrop}
-            className={cn(
-              "flex cursor-pointer flex-col items-center gap-2 rounded-md border border-dashed bg-surface-raised px-4 py-10 text-center transition-colors hover:border-accent hover:bg-surface",
-              dragging ? "border-accent bg-surface" : "border-border-interactive",
-            )}
-          >
-            <Upload aria-hidden className={cn("size-5", dragging ? "text-accent-text" : "text-text-muted")} />
-            <span className="text-sm text-text">
-              {dragging
-                ? (language === "pt" ? "Solte para começar" : "Drop to start")
-                : mode === "compress"
-                ? (language === "pt" ? "Arraste os arquivos aqui ou clique para escolher" : "Drag files here or click to choose")
-                : (language === "pt" ? "Arraste o arquivo aqui ou clique para escolher" : "Drag an archive here or click to choose")}
-            </span>
-            <span className="text-xs text-text-muted">
-              {acceptsMany
-                ? (language === "pt" ? "Vários arquivos podem ser selecionados de uma vez." : "You can select several files at once.")
-                : (language === "pt" ? "Um arquivo por vez." : "One file at a time.")}
-            </span>
-            {mode === "decompress" ? (
-              <span className="max-w-lg text-xs text-text-muted">
-                {language === "pt"
-                  ? <>ZIP, GZIP e TAR rodam localmente até {formatBytes(CLIENT_MAX_BYTES)}. ZSTD, RAR e 7Z usam o servidor.</>
-                  : <>ZIP, GZIP, and TAR run locally up to {formatBytes(CLIENT_MAX_BYTES)}. ZSTD, RAR, and 7Z use the server.</>}
-              </span>
-            ) : null}
-          </label>
-
-          <input
-            id={inputId}
-            type="file"
-            multiple={acceptsMany}
-            onChange={(event) => onSelect(event.target.files)}
-            className="sr-only"
-            aria-describedby={error ? errorId : undefined}
-          />
-
-          {files.length > 0 ? (
-            <ul className="flex flex-col gap-1 text-sm">
-              {files.map((file) => (
-                <li key={file.name} className="bullet-arrow flex justify-between gap-4 text-text">
-                  <span className="truncate">{file.name}</span>
-                  <span className="tabular shrink-0 text-text-muted">{formatBytes(file.size)}</span>
-                </li>
-              ))}
-            </ul>
-          ) : null}
-        </section>
+          <FileInput inputId={inputId} errorId={visibleError ? errorId : undefined} dragging={dragging} setDragging={setDragging} onDrop={onDrop} mode={mode} acceptsMany={acceptsMany} onSelect={onSelect} files={files} language={language} />
         )}
 
-        {error ? (
+        {visibleError ? (
           <p id={errorId} role="alert" className="text-sm text-danger">
-            {error}
+            {localizeFeedback(visibleError, language)}
           </p>
         ) : null}
 
@@ -538,12 +364,12 @@ export function FileWorkspace({
           <section className="flex flex-wrap items-center gap-3">
             <Button variant="primary" size="md" onClick={runCompress} disabled={compressDisabled}>
               {busy ? <Loader2 aria-hidden className="animate-spin" /> : null}
-              <span>{language === "pt" ? "Compactar em" : "Compress to"} {FORMATS[format].label}</span>
+              <span>{message(language, "ui.compressTo")} {FORMATS[format].label}</span>
             </Button>
 
             {FORMATS[format].levels ? (
               <p className="text-xs text-text-muted">
-                {language === "pt" ? PRESET_LABELS[preset] : ({ fast: "Fast", balanced: "Balanced", max: "Maximum", custom: "Custom" }[preset])} — {language === "pt" ? "nível" : "level"} {level} {language === "pt" ? "de" : "of"} {FORMATS[format].levels.min}–
+                {message(language, `ui.preset.${preset}`)} — {message(language, "ui.level")} {level} {message(language, "ui.of")} {FORMATS[format].levels.min}–
                 {FORMATS[format].levels.max}
               </p>
             ) : null}
@@ -551,65 +377,13 @@ export function FileWorkspace({
             {busy ? (
               <Button variant="ghost" size="sm" onClick={reset}>
                 <X aria-hidden />
-                <span>{language === "pt" ? "Cancelar" : "Cancel"}</span>
+                <span>{message(language, "ui.cancel")}</span>
               </Button>
             ) : null}
           </section>
         ) : null}
 
-        {archive ? (
-          <section className="flex flex-col gap-3">
-            <h2 className="section-title">
-              {language === "pt" ? "Conteúdo" : "Contents"} ({FORMATS[archive.format].label})
-            </h2>
-
-            <ul className="divide-y divide-border overflow-hidden rounded-md border border-border">
-              {archive.entries.map((entry) => (
-                <li
-                  key={entry.name}
-                  className="flex flex-wrap items-center justify-between gap-3 bg-surface px-3 py-2"
-                >
-                  <span className="min-w-0 flex-1 truncate text-sm text-text">
-                    {entry.name}
-                  </span>
-                  <span className="tabular shrink-0 text-xs text-text-muted">
-                    {formatBytes(entry.size)}
-                    {entry.compressedSize !== undefined
-                      ? language === "pt" ? ` · comprimido ${formatBytes(entry.compressedSize)}` : ` · compressed ${formatBytes(entry.compressedSize)}`
-                      : ""}
-                  </span>
-                  {entry.directory ? (
-                    <span className="text-xs text-text-muted">{language === "pt" ? "pasta" : "folder"}</span>
-                  ) : (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => extractEntry(archive.single ? undefined : entry.name)}
-                      disabled={busy}
-                    >
-                      {language === "pt" ? "Extrair" : "Extract"}
-                    </Button>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </section>
-        ) : null}
-
-        {result ? (
-          <section className="flex flex-wrap items-center gap-3 border-t border-border pt-4">
-            <Button variant="primary" size="md" onClick={download}>
-              <Download aria-hidden />
-              <span>{language === "pt" ? "Baixar" : "Download"} {result.name}</span>
-            </Button>
-            <p className="tabular text-xs text-text-muted">
-              {formatBytes(result.bytes.length)}
-              {mode === "compress" && totalSize > 0
-                ? language === "pt" ? ` · ${Math.round((result.bytes.length / totalSize) * 100)}% do original` : ` · ${Math.round((result.bytes.length / totalSize) * 100)}% of original`
-                : ""}
-            </p>
-          </section>
-        ) : null}
+        <FileResults archive={archive} result={result} busy={busy} mode={mode} totalSize={totalSize} language={language} onExtract={extractEntry} onDownload={download} />
 
         <AdvancedOptions options={levelOptions} values={options} onChange={setOption} />
 
@@ -631,10 +405,4 @@ export function FileWorkspace({
  * para ele não tem para onde ir — e dizer isso é melhor do que oferecer um
  * botão que falha.
  */
-function backendUnavailable(routing: RoutingDecision, language: "pt" | "en"): string {
-  return language === "pt"
-    ? `Esta operação precisa do servidor (${routing.reason}), que ainda não está disponível. Enquanto isso, use um arquivo dentro do limite local ou outro formato.`
-    : `This operation needs the server (${routing.reason}), which is not available yet. Use a file within the local limit or another format.`;
-}
-
 export { clampLevel };

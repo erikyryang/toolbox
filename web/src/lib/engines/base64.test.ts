@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { feedbackFrom } from "../messages.testing.ts";
 import { decodeBase64, encodeBase64 } from "./base64.ts";
 import { OperationError } from "./errors.ts";
 
@@ -39,23 +40,15 @@ describe("Base64", () => {
   });
 
   it("recusa caractere fora do alfabeto selecionado e aponta a posição", () => {
-    try {
-      decodeBase64("dG9v*GJveA==", standard);
-      expect.unreachable("deveria ter lançado");
-    } catch (error) {
-      expect(error).toBeInstanceOf(OperationError);
-      expect((error as OperationError).message).toContain('"*"');
-      expect((error as OperationError).position).toBe(4);
-    }
+    const feedback = feedbackFrom(() => decodeBase64("dG9v*GJveA==", standard));
+    expect(feedback.code).toBe("error.base64Character");
+    expect(feedback.params?.char).toContain('"*"');
+    expect(feedback.position).toBe(4);
   });
 
   it("sugere a troca de variante quando o caractere é do outro alfabeto", () => {
-    try {
-      decodeBase64("a-b_cd", standard);
-      expect.unreachable("deveria ter lançado");
-    } catch (error) {
-      expect((error as OperationError).message).toContain("URL-safe");
-    }
+    expect(feedbackFrom(() => decodeBase64("a-b_cd", standard)).code).toBe("error.base64UrlSafeAlphabet");
+    expect(feedbackFrom(() => decodeBase64("a+b/cd", urlsafeNoPadding)).code).toBe("error.base64StandardAlphabet");
   });
 
   it("recusa preenchimento no meio da entrada", () => {
