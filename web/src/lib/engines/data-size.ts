@@ -1,3 +1,4 @@
+import { DATA_UNITS, UNIT_LABELS, type DataUnit } from "./data-size-units.ts";
 import { OperationError } from "./errors.ts";
 import type { Engine, EngineResult, OptionValues } from "../operations/types.ts";
 
@@ -17,19 +18,6 @@ import type { Engine, EngineResult, OptionValues } from "../operations/types.ts"
  * numérico, e a unidade vem exclusivamente dos seletores. Por isso aqui não
  * há leitura de sufixo nem de várias linhas — não existe como digitá-los.
  */
-
-export const DATA_UNITS = ["bit", "byte", "kb", "mb", "gb", "tb"] as const;
-
-export type DataUnit = (typeof DATA_UNITS)[number];
-
-export const UNIT_LABELS: Record<DataUnit, string> = {
-  bit: "bit",
-  byte: "byte",
-  kb: "KB",
-  mb: "MB",
-  gb: "GB",
-  tb: "TB",
-};
 
 /** O nome IEC de cada degrau, usado na nota quando a base é 1024. */
 const IEC_LABELS: Partial<Record<DataUnit, string>> = {

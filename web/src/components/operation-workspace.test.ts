@@ -52,4 +52,14 @@ describe("workspace de uma operação sem inverso", () => {
   it("continua renderizando o seletor nas operações reversíveis", () => {
     expect(render("base64")).toContain("Conversion direction");
   });
+
+  it("renderiza controles editáveis e status acessível antes de carregar motores", () => {
+    const base64 = render("base64");
+    expect(base64).toContain('role="status"');
+    expect(base64).toContain("Loading tool…");
+    expect(base64).toContain("textarea");
+    expect(base64).toContain("Encode");
+    expect(base64).toContain("Decode");
+    expect(base64).not.toContain('aria-invalid="true"');
+  });
 });

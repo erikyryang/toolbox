@@ -1,12 +1,14 @@
-import { DATA_UNITS, UNIT_LABELS } from "../engines/data-size.ts";
+import { DATA_UNITS, UNIT_LABELS } from "../engines/data-size-units.ts";
 import type { OperationMeta, OptionSpec } from "./types.ts";
 
 /**
  * Entradas de catálogo do grupo Unidades.
  *
- * As escolhas de unidade são derivadas da escada do motor, e não redigitadas:
- * acrescentar um degrau lá o faz aparecer nos dois seletores aqui, sem que
- * exista uma segunda lista para sair de sincronia.
+ * As escolhas de unidade são derivadas da escada de unidades, e não
+ * redigitadas: acrescentar um degrau lá o faz aparecer nos dois seletores
+ * aqui, sem que exista uma segunda lista para sair de sincronia. O catálogo lê
+ * só o vocabulário — a aritmética do conversor mora no motor, que chega
+ * quando a tela dele é aberta, e não junto com o menu.
  */
 
 function unitChoices() {
