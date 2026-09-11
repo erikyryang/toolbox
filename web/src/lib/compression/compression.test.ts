@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { feedbackFrom, feedbackFromRejection } from "../messages.testing.ts";
 
 import { OperationError } from "../engines/errors.ts";
 import { assertDeclaredSizeIsSane, createBombGuard } from "./bomb.ts";
@@ -101,9 +102,7 @@ describe("compactação no navegador", () => {
   });
 
   it("recusa lista vazia", async () => {
-    await expect(compress({ format: "zip", level: 6, files: [] })).rejects.toThrow(
-      /Nenhum arquivo/,
-    );
+    expect((await feedbackFromRejection(compress({ format: "zip", level: 6, files: [] }))).code).toBe("error.noFiles");
   });
 });
 
@@ -137,14 +136,14 @@ describe("detecção de formato", () => {
 
   it("erra com clareza em formato desconhecido", async () => {
     const bytes = Uint8Array.from([1, 2, 3, 4, 5, 6, 7, 8]);
-    await expect(inspect(bytes)).rejects.toThrow(/não identificado/);
+    expect((await feedbackFromRejection(inspect(bytes))).code).toBe("error.signature");
   });
 
   it("erra com clareza em formato que só o backend lê", async () => {
     // Assinatura de 7Z sem conteúdo válido: o erro deve falar do formato,
     // não estourar no parser.
     const bytes = Uint8Array.from([0x37, 0x7a, 0xbc, 0xaf, 0x27, 0x1c, 0, 0]);
-    await expect(inspect(bytes)).rejects.toThrow(/servidor/);
+    expect((await feedbackFromRejection(inspect(bytes))).code).toBe("error.serverFormat");
   });
 });
 
@@ -254,7 +253,7 @@ describe("proteção contra bomba de descompressão", () => {
 
   it("aborta ao passar da razão de expansão acima do piso", () => {
     const guard = createBombGuard(bombCompressed);
-    expect(() => guard.add(RATIO_CHECK_FLOOR_BYTES * 2)).toThrow(/bomba/);
+    expect(feedbackFrom(() => guard.add(RATIO_CHECK_FLOOR_BYTES * 2)).code).toBe("error.expansionLimit");
   });
 
   it("não acusa dado honesto muito compressível abaixo do piso", () => {
@@ -265,7 +264,7 @@ describe("proteção contra bomba de descompressão", () => {
 
   it("aborta ao passar do teto de bytes de saída", () => {
     const guard = createBombGuard(MAX_OUTPUT_BYTES);
-    expect(() => guard.add(MAX_OUTPUT_BYTES + 1)).toThrow(/saída/);
+    expect(feedbackFrom(() => guard.add(MAX_OUTPUT_BYTES + 1)).code).toBe("error.outputLimit");
   });
 
   it("deixa passar uma expansão comum", () => {
@@ -277,17 +276,20 @@ describe("proteção contra bomba de descompressão", () => {
   it("acumula entre blocos, em vez de olhar cada um isoladamente", () => {
     const guard = createBombGuard(bombCompressed);
     const chunk = Math.ceil(RATIO_CHECK_FLOOR_BYTES / 2);
-    expect(() => {
+    expect(feedbackFrom(() => {
       guard.add(chunk);
       guard.add(chunk);
       guard.add(chunk);
-    }).toThrow(/bomba/);
+    }).code).toBe("error.expansionLimit");
   });
 
   it("recusa tamanho declarado absurdo antes de alocar memória", () => {
-    expect(() =>
-      assertDeclaredSizeIsSane(bombCompressed, RATIO_CHECK_FLOOR_BYTES * 2),
-    ).toThrow(/bomba/);
+    expect(
+      feedbackFrom(() => assertDeclaredSizeIsSane(bombCompressed, RATIO_CHECK_FLOOR_BYTES * 2)).code,
+    ).toBe("error.expansionLimit");
+    expect(
+      feedbackFrom(() => assertDeclaredSizeIsSane(1, MAX_OUTPUT_BYTES + 1)).code,
+    ).toBe("error.declaredLimit");
     expect(() => assertDeclaredSizeIsSane(100, 1000)).not.toThrow();
   });
 });
@@ -319,18 +321,18 @@ describe("TAR", () => {
   it("detecta cabeçalho corrompido pelo checksum", () => {
     const tar = createTar([{ name: "a.txt", data: encoder.encode("A") }]);
     tar[0] = 0x7a; // muda o nome sem recalcular o checksum
-    expect(() => listTar(tar)).toThrow(/[Cc]hecksum/);
+    expect(feedbackFrom(() => listTar(tar)).code).toBe("error.tarChecksum");
   });
 });
 
 describe("listagem de ZIP", () => {
   it("recusa arquivo curto demais", () => {
-    expect(() => listZip(Uint8Array.from([1, 2, 3]))).toThrow(/curto/);
+    expect(feedbackFrom(() => listZip(Uint8Array.from([1, 2, 3]))).code).toBe("error.zipShort");
   });
 
   it("recusa arquivo sem diretório central", () => {
     const bytes = new Uint8Array(64);
     bytes.set([0x50, 0x4b, 0x03, 0x04]);
-    expect(() => listZip(bytes)).toThrow(/diretório central/);
+    expect(feedbackFrom(() => listZip(bytes)).code).toBe("error.zipDirectory");
   });
 });

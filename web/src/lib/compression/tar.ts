@@ -35,9 +35,7 @@ const decoder = new TextDecoder();
 function writeString(block: Uint8Array, offset: number, value: string, length: number): void {
   const bytes = encoder.encode(value);
   if (bytes.length > length) {
-    throw new OperationError(
-      `O nome "${value}" tem ${bytes.length} bytes e não cabe no campo de ${length} do formato TAR.`,
-    );
+    throw new OperationError({ code: "error.tarName", params: { name: value, size: bytes.length, limit: length } });
   }
   block.set(bytes.subarray(0, length), offset);
 }
@@ -125,9 +123,7 @@ export function listTar(bytes: Uint8Array): TarListing[] {
 
     const declared = readOctal(header, 148, 8);
     if (declared !== 0 && declared !== checksum(header)) {
-      throw new OperationError(
-        `Checksum inválido no cabeçalho TAR do deslocamento ${offset}: o arquivo parece corrompido.`,
-      );
+      throw new OperationError({ code: "error.tarChecksum", params: { offset } });
     }
 
     const name = readString(header, 0, NAME_MAX);
@@ -136,9 +132,7 @@ export function listTar(bytes: Uint8Array): TarListing[] {
     const typeflag = String.fromCharCode(header[156] || 0x30);
 
     if (offset + BLOCK + size > bytes.length) {
-      throw new OperationError(
-        `A entrada "${name}" declara ${size} bytes, mas o arquivo TAR termina antes disso.`,
-      );
+      throw new OperationError({ code: "error.tarTruncated", params: { name, size } });
     }
 
     entries.push({

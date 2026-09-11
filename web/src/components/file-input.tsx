@@ -3,6 +3,7 @@ import { Upload } from "lucide-react";
 import { CLIENT_MAX_BYTES, formatBytes } from "@/lib/compression/limits";
 import type { SelectedFile } from "@/lib/compression/file-controller";
 import { cn } from "@/lib/utils";
+import { message } from "@/lib/messages";
 
 type Props = {
   inputId: string;
@@ -38,21 +39,19 @@ export function FileInput({ inputId, errorId, dragging, setDragging, onDrop, mod
         <Upload aria-hidden className={cn("size-5", dragging ? "text-accent-text" : "text-text-muted")} />
         <span className="text-sm text-text">
           {dragging
-            ? (language === "pt" ? "Solte para começar" : "Drop to start")
+            ? message(language, "ui.dropToStart")
             : mode === "compress"
-            ? (language === "pt" ? "Arraste os arquivos aqui ou clique para escolher" : "Drag files here or click to choose")
-            : (language === "pt" ? "Arraste o arquivo aqui ou clique para escolher" : "Drag an archive here or click to choose")}
+            ? message(language, "ui.dropFiles")
+            : message(language, "ui.dropArchive")}
         </span>
         <span className="text-xs text-text-muted">
           {acceptsMany
-            ? (language === "pt" ? "Vários arquivos podem ser selecionados de uma vez." : "You can select several files at once.")
-            : (language === "pt" ? "Um arquivo por vez." : "One file at a time.")}
+            ? message(language, "ui.multipleFilesHint")
+            : message(language, "ui.oneFileAtATime")}
         </span>
         {mode === "decompress" ? (
           <span className="max-w-lg text-xs text-text-muted">
-            {language === "pt"
-              ? <>ZIP, GZIP e TAR rodam localmente até {formatBytes(CLIENT_MAX_BYTES)}. ZSTD, RAR e 7Z usam o servidor.</>
-              : <>ZIP, GZIP, and TAR run locally up to {formatBytes(CLIENT_MAX_BYTES)}. ZSTD, RAR, and 7Z use the server.</>}
+            {message(language, "ui.extractRouting", { limit: formatBytes(CLIENT_MAX_BYTES) })}
           </span>
         ) : null}
       </label>

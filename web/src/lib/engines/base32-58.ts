@@ -52,10 +52,7 @@ export function fromBase32(input: string): Uint8Array {
   for (let i = 0; i < compact.length; i += 1) {
     const value = BASE32_ALPHABET.indexOf(compact[i]);
     if (value < 0) {
-      throw new OperationError(
-        `Caractere ${describeChar(compact[i])} não pertence ao alfabeto Base32 (A–Z e 2–7).`,
-        i,
-      );
+      throw new OperationError({ code: "error.base32Character", params: { char: describeChar(compact[i]) } }, i);
     }
 
     buffer = (buffer << 5) | value;
@@ -124,13 +121,7 @@ export function fromBase58(input: string): Uint8Array {
   for (let i = 0; i < compact.length; i += 1) {
     const value = BASE58_ALPHABET.indexOf(compact[i]);
     if (value < 0) {
-      const ambiguous = "0OIl".includes(compact[i])
-        ? " O alfabeto Base58 omite 0, O, I e l justamente por serem ambíguos."
-        : "";
-      throw new OperationError(
-        `Caractere ${describeChar(compact[i])} não pertence ao alfabeto Base58.${ambiguous}`,
-        i,
-      );
+      throw new OperationError({ code: "error.base58Character", params: { char: describeChar(compact[i]) } }, i);
     }
 
     if (i < zeros) continue;

@@ -17,9 +17,7 @@ export function utf8Decode(bytes: Uint8Array, fatal = true): string {
   try {
     return new TextDecoder("utf-8", { fatal }).decode(bytes);
   } catch {
-    throw new OperationError(
-      "O resultado não é texto UTF-8 válido. Se o conteúdo for binário, use a ação de baixar em vez da saída em texto.",
-    );
+    throw new OperationError({ code: "error.utf8" });
   }
 }
 
@@ -45,18 +43,12 @@ export function fromHex(input: string): Uint8Array {
 
   for (let i = 0; i < compact.length; i += 1) {
     if (!/[0-9a-fA-F]/.test(compact[i])) {
-      throw new OperationError(
-        `Caractere ${describeChar(compact[i])} não é um dígito hexadecimal.`,
-        i,
-      );
+      throw new OperationError({ code: "error.hexCharacter", params: { char: describeChar(compact[i]) } }, i);
     }
   }
 
   if (compact.length % 2 !== 0) {
-    throw new OperationError(
-      `A entrada tem ${compact.length} dígitos hexadecimais — um número ímpar. Cada byte precisa de dois dígitos.`,
-      compact.length - 1,
-    );
+    throw new OperationError({ code: "error.hexLength", params: { count: compact.length } }, compact.length - 1);
   }
 
   const bytes = new Uint8Array(compact.length / 2);
@@ -113,34 +105,24 @@ export function fromBase64(
   const body = compact.replace(/=+$/, "");
 
   if (/=/.test(body)) {
-    throw new OperationError(
-      "O caractere de preenchimento \"=\" só pode aparecer no fim da entrada.",
-      compact.indexOf("="),
-    );
+    throw new OperationError({ code: "error.base64Padding" }, compact.indexOf("="));
   }
 
   const values: number[] = [];
   for (let i = 0; i < body.length; i += 1) {
     const value = chars.indexOf(body[i]);
     if (value < 0) {
-      const other = alphabet === "urlsafe" ? "padrão" : "URL-safe";
-      const hint = base64Alphabet(alphabet === "urlsafe" ? "standard" : "urlsafe")
-        .includes(body[i])
-        ? ` Esse caractere pertence ao alfabeto ${other} — troque a variante nas opções avançadas.`
-        : "";
-      throw new OperationError(
-        `Caractere ${describeChar(body[i])} não pertence ao alfabeto Base64 selecionado.${hint}`,
-        i,
-      );
+      const other = alphabet === "urlsafe" ? "standard" : "urlsafe";
+      const code = base64Alphabet(other).includes(body[i])
+        ? other === "standard" ? "error.base64StandardAlphabet" : "error.base64UrlSafeAlphabet"
+        : "error.base64Character";
+      throw new OperationError({ code, params: { char: describeChar(body[i]) } }, i);
     }
     values.push(value);
   }
 
   if (values.length % 4 === 1) {
-    throw new OperationError(
-      "A entrada Base64 está incompleta: sobrou um único caractere no último grupo.",
-      body.length - 1,
-    );
+    throw new OperationError({ code: "error.base64Incomplete" }, body.length - 1);
   }
 
   const bytes = new Uint8Array(Math.floor((values.length * 6) / 8));

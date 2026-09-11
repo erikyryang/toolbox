@@ -1,5 +1,7 @@
 "use client";
 
+import { localizeFeedback, message } from "@/lib/messages";
+
 import { useCallback, useId, useMemo, useState } from "react";
 import { ArrowRight, Clock } from "lucide-react";
 
@@ -58,6 +60,7 @@ function Workspace({ operation }: { operation: Operation }) {
 
   const active = directionOf(localized, direction);
   const output = outcome.ok ? outcome.output : "";
+  const notes = outcome.ok ? outcome.notes.map((note) => localizeFeedback(note, language)) : [];
   const { primary, advanced } = splitOptions(localized);
   const numeric = operation.valueKind === "number";
 
@@ -110,7 +113,7 @@ function Workspace({ operation }: { operation: Operation }) {
             */}
             <div
               role="group"
-              aria-label={language === "pt" ? "Sentido da conversão" : "Conversion direction"}
+              aria-label={message(language, "ui.conversionDirection")}
               className="inline-flex rounded-md border border-border-interactive p-0.5"
             >
               {(["forward", "reverse"] as Direction[]).map((option) => {
@@ -148,7 +151,7 @@ function Workspace({ operation }: { operation: Operation }) {
                 className="ml-auto"
               >
                 <Clock aria-hidden />
-                <span>{language === "pt" ? "Agora" : "Now"}</span>
+                <span>{message(language, "ui.now")}</span>
               </Button>
             ) : null}
           </div>
@@ -175,7 +178,7 @@ function Workspace({ operation }: { operation: Operation }) {
 
             {outcome.ok ? null : (
               <p id={errorId} role="alert" className="text-sm text-danger">
-                {outcome.error}
+                {localizeFeedback(outcome.feedback, language)}
               </p>
             )}
           </div>
@@ -190,9 +193,9 @@ function Workspace({ operation }: { operation: Operation }) {
               numeric={numeric}
             />
 
-            {outcome.ok && outcome.notes.length > 0 ? (
+            {notes.length > 0 ? (
               <ul className="flex flex-col gap-1">
-                {outcome.notes.map((note) => (
+                {notes.map((note) => (
                   <li key={note} className="bullet-arrow text-sm text-text-muted">
                     {note}
                   </li>

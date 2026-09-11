@@ -1,5 +1,7 @@
 "use client";
 
+import { message } from "@/lib/messages";
+
 import { useId } from "react";
 import { Download, X } from "lucide-react";
 
@@ -104,10 +106,10 @@ export function TextPanel({
               variant="chip"
               size="chip"
               onClick={onClear}
-              aria-label={language === "pt" ? "Limpar entrada" : "Clear input"}
+              aria-label={message(language, "ui.clearInput")}
             >
               <X aria-hidden />
-              <span>{language === "pt" ? "Limpar" : "Clear"}</span>
+              <span>{message(language, "ui.clear")}</span>
             </Button>
           ) : null}
         </div>
@@ -207,10 +209,10 @@ function DownloadButton({
       size="chip"
       onClick={download}
       disabled={value === ""}
-      aria-label={language === "pt" ? "Baixar saída" : "Download output"}
+      aria-label={message(language, "ui.downloadOutput")}
     >
       <Download aria-hidden />
-      <span>{language === "pt" ? "Baixar" : "Download"}</span>
+      <span>{message(language, "ui.download")}</span>
     </Button>
   );
 }

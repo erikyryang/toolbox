@@ -1,6 +1,6 @@
 /// <reference lib="webworker" />
 
-import { isOperationError } from "../engines/errors.ts";
+import { feedbackOf, type Feedback } from "../messages.ts";
 import { compress, extract, inspect, type Archive } from "./codecs.ts";
 import type { FormatId } from "./formats.ts";
 
@@ -22,7 +22,7 @@ export type WorkerResponse =
   | { id: number; ok: true; kind: "compress"; data: ArrayBuffer }
   | { id: number; ok: true; kind: "inspect"; archive: Archive }
   | { id: number; ok: true; kind: "extract"; data: ArrayBuffer }
-  | { id: number; ok: false; error: string };
+  | { id: number; ok: false; feedback: Feedback };
 
 function toBytes(buffer: ArrayBuffer): Uint8Array {
   return new Uint8Array(buffer);
@@ -73,15 +73,8 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
     const response: WorkerResponse = { id: request.id, ok: true, kind: "extract", data: buffer };
     self.postMessage(response, [buffer]);
   } catch (error) {
-    const response: WorkerResponse = {
-      id: request.id,
-      ok: false,
-      error: isOperationError(error)
-        ? error.message
-        : error instanceof Error
-          ? `A operação falhou: ${error.message}`
-          : "A operação falhou por um motivo inesperado.",
-    };
+    // Só o código atravessa: uma frase montada aqui chegaria no idioma errado.
+    const response: WorkerResponse = { id: request.id, ok: false, feedback: feedbackOf(error) };
     self.postMessage(response);
   }
 };

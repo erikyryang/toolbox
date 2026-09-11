@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { feedbackFrom } from "../messages.testing.ts";
 
 import { OperationError } from "../engines/errors.ts";
 import { toBase64, toHex } from "../engines/bytes.ts";
@@ -59,32 +60,23 @@ describe("arquivo compactado colado como texto", () => {
    */
   it("recusa Base64 válido cujo conteúdo não é um formato suportado", () => {
     const png = Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2, 3]);
-    try {
-      decodeArchiveText(toBase64(png));
-      expect.unreachable("deveria ter lançado");
-    } catch (error) {
-      expect(error).toBeInstanceOf(OperationError);
-      expect((error as OperationError).message).toMatch(/0x89 50 4e 47/);
-      expect((error as OperationError).message).toMatch(/nenhum formato suportado/);
-    }
+    const feedback = feedbackFrom(() => decodeArchiveText(toBase64(png)));
+    expect(feedback.code).toBe("error.pasteFormat");
+    expect(feedback.params?.signature).toMatch(/0x89 50 4e 47/);
   });
 
   it("recusa texto que não é Base64 nem hexadecimal", () => {
-    expect(() => decodeArchiveText("isto não é um arquivo!!")).toThrow(
-      /não é Base64 nem hexadecimal/,
-    );
+    expect(feedbackFrom(() => decodeArchiveText("isto não é um arquivo!!")).code).toBe("error.pasteEncoding");
   });
 
   it("recusa entrada vazia com uma instrução, não com um erro cru", () => {
     for (const empty of ["", "   ", "\n\n"]) {
-      expect(() => decodeArchiveText(empty)).toThrow(/Cole o conteúdo/);
+      expect(feedbackFrom(() => decodeArchiveText(empty)).code).toBe("error.pasteEmpty");
     }
   });
 
   it("recusa texto acima do teto de colagem", () => {
-    expect(() => decodeArchiveText("A".repeat(MAX_PASTED_CHARS + 1))).toThrow(
-      /grande demais/,
-    );
+    expect(feedbackFrom(() => decodeArchiveText("A".repeat(MAX_PASTED_CHARS + 1))).code).toBe("error.pasteLarge");
   });
 
   it("um dump hexadecimal não é confundido com Base64", () => {

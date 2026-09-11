@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { feedbackFrom } from "../messages.testing.ts";
+import { localizeFeedback } from "../messages.ts";
 
-import { OperationError } from "./errors.ts";
 import { formatter } from "./structured.ts";
 import { normalizeResult } from "../operations/types.ts";
 
@@ -76,33 +77,28 @@ describe("fidelidade dos atributos XML", () => {
 describe("avisos de leitura com perda", () => {
   it("avisa sobre a convenção usada para atributos XML", () => {
     const result = beautifyXml('<r a="1"><b>x</b></r>', {});
-    expect(notes(result).join(" ")).toContain("@_");
+    expect(notes(result)).toContainEqual({ code: "note.xmlAttributes", params: { prefix: "@_", textKey: "#text" } });
   });
 
   it("avisa que namespaces XML perdem a semântica", () => {
     const result = beautifyXml('<r xmlns:x="urn:x"><x:b>1</x:b></r>', {});
-    expect(notes(result).join(" ")).toContain("namespace");
+    expect(notes(result).map((note) => note.code)).toContain("note.xmlNamespaces");
   });
 });
 
 describe("erros de parsing", () => {
   it("aponta linha e coluna em JSON inválido", () => {
-    try {
-      beautifyJson('{\n  "a": 1,\n}', {});
-      expect.unreachable("deveria ter lançado");
-    } catch (error) {
-      expect(error).toBeInstanceOf(OperationError);
-      expect((error as OperationError).message).toMatch(/linha 3, coluna 1/);
-    }
+    const feedback = feedbackFrom(() => beautifyJson('{\n  "a": 1,\n}', {}));
+    expect(feedback.code).toBe("error.json");
+    expect(feedback.params).toMatchObject({ line: 3, column: 1 });
+    expect(localizeFeedback(feedback, "pt")).toMatch(/linha 3, coluna 1/);
+    expect(localizeFeedback(feedback, "en")).toMatch(/line 3, column 1/);
   });
 
-  it("nomeia a tag e a posição em XML não fechado", () => {
-    try {
-      beautifyXml("<a><b></a>", {});
-      expect.unreachable("deveria ter lançado");
-    } catch (error) {
-      expect((error as OperationError).message).toContain("b");
-      expect((error as OperationError).message).toMatch(/linha \d+/);
-    }
+  it("aponta a posição em XML não fechado", () => {
+    const feedback = feedbackFrom(() => beautifyXml("<a>\n<b></a>", {}));
+    expect(feedback.code).toBe("error.xml");
+    expect(feedback.params).toMatchObject({ line: 2 });
+    expect(feedback.position).toBeGreaterThan(0);
   });
 });
