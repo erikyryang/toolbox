@@ -23,4 +23,3 @@ Nenhuma alteração adicional de requisitos existentes fora dos deltas já ident
 Novos testes e configuração de E2E em web, scripts/package-lock, workflows GitHub Actions e documentação de execução. Sem alterar regras de produto.
 
 Branch: `test/interaction-coverage-and-ci`. Base: `main@9fc33af`. Esta melhoria terá PR próprio.
-

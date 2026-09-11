@@ -10,6 +10,7 @@
     "tokens": "node scripts/generate-tokens.mts",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "playwright test",
     "typecheck": "tsc --noEmit",
     "fonts:sync": "node scripts/sync-fonts.mjs"
   },
@@ -28,6 +29,7 @@
   },
   "devDependencies": {
     "@fontsource/ibm-plex-mono": "^5.3.0",
+    "@playwright/test": "1.62.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^26.4.1",
     "@types/react": "^19",

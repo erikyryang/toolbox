@@ -16,7 +16,7 @@ A suíte SHALL verificar interação real com operações de texto, navegação 
 
 ### Requirement: Arquivos locais e integração
 
-A suíte SHALL exercitar compressão/extração em Worker e uma operação roteada ao backend Go usando fixtures sintéticas.
+A suíte SHALL exercitar compressão/extração em Worker, uma operação roteada ao backend Go com fixtures sintéticas e a troca entre as ferramentas de arquivo sem recarregar a página.
 
 #### Scenario: Round trip local
 
@@ -27,6 +27,11 @@ A suíte SHALL exercitar compressão/extração em Worker e uma operação rotea
 
 - **WHEN** um arquivo sintético ultrapassa o limite definido para E2E
 - **THEN** a interface informa o destino servidor e o backend real produz resultado íntegro
+
+#### Scenario: Navegação entre ferramentas de arquivo
+
+- **WHEN** o usuário vai de compactar para descompactar e volta por links internos
+- **THEN** seleção, conteúdo do arquivo e downloads são descartados e cada rota mostra os controles da sua operação
 
 ### Requirement: Verificação contínua reproduzível
 
@@ -41,4 +46,3 @@ O repositório SHALL executar lint, typecheck, testes unitários frontend/Go, bu
 
 - **WHEN** um colaborador segue a documentação
 - **THEN** ele consegue executar a mesma suíte e conhece os requisitos de browser e backend
-

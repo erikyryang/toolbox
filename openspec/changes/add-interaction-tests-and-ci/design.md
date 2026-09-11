@@ -27,4 +27,3 @@ Publicar em PR próprio a partir da main atualizada. Manter a mudança ativa dur
 ## Open Questions
 
 Nenhuma decisão de produto pendente. Detalhes de implementação serão resolvidos com base nos testes e registrados neste design quando materiais.
-
