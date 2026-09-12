@@ -23,7 +23,7 @@ function envNumber(value: string | undefined, fallback: number): number {
  */
 export const CLIENT_MAX_BYTES = envNumber(
   process.env.NEXT_PUBLIC_CLIENT_MAX_BYTES,
-  1024 * 1024 * 1024,
+  10 * 1024 * 1024 * 1024,
 );
 
 /** Nível ZSTD acima do qual o custo de memória sai do orçamento do navegador. */
