@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { Archive } from "./codecs";
 import { DETECTION_PREFIX_BYTES, FileOperationController, type FileOperationDependencies, type SelectedFile } from "./file-controller";
-import { CLIENT_MAX_BYTES } from "./limits";
+import { CLIENT_MAX_BYTES, ZSTD_CLIENT_MAX_LEVEL } from "./limits";
 import { OperationError } from "../engines/errors";
 import { localizeFeedback } from "../messages";
 import { failure } from "./backend";
@@ -61,8 +61,9 @@ describe("file operation lifecycle", () => {
     const { controller, dependencies } = fixture();
     const file = selected();
     await controller.select([file], false);
-    await controller.compress("zstd", "custom", 22);
-    expect(dependencies.compressOnServer).toHaveBeenCalledWith("zstd", "custom", 22, [{ name: file.name, data: file.blob }], expect.any(AbortSignal));
+    const level = ZSTD_CLIENT_MAX_LEVEL + 1;
+    await controller.compress("zstd", "custom", level);
+    expect(dependencies.compressOnServer).toHaveBeenCalledWith("zstd", "custom", level, [{ name: file.name, data: file.blob }], expect.any(AbortSignal));
     expect(file.blob.arrayBuffer).not.toHaveBeenCalled();
   });
 

@@ -134,6 +134,13 @@ describe("detecção de formato", () => {
     expect(decoder.decode(extracted)).toBe(CONTENT_B);
   });
 
+  it("compacta ZSTD no nível máximo no navegador", async () => {
+    const [file] = files();
+    const packed = await compress({ format: "zstd", level: 22, files: [file] });
+    const archive = await inspect(packed, "a.txt.zst");
+    expect(decoder.decode(await extract(packed, archive))).toBe(CONTENT_A);
+  });
+
   it("lista as entradas de um TAR dentro de um ZSTD", async () => {
     const packed = await compress({
       format: "zstd",
@@ -256,7 +263,7 @@ describe("roteamento entre navegador e servidor", () => {
   it("dá sempre um motivo quando manda para o servidor", () => {
     const decisions = [
       decideRouting({ format: "rar", direction: "decompress", sizeBytes: 1 }),
-      decideRouting({ format: "zstd", direction: "compress", sizeBytes: 1, level: 22 }),
+      decideRouting({ format: "zstd", direction: "compress", sizeBytes: 1, level: ZSTD_CLIENT_MAX_LEVEL + 1 }),
       decideRouting({ format: "gzip", direction: "compress", sizeBytes: CLIENT_MAX_BYTES * 2 }),
     ];
     for (const decision of decisions) {

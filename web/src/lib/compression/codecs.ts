@@ -62,9 +62,17 @@ function zstdLib(): Promise<typeof import("@bokuweb/zstd-wasm")> {
 
 async function zstd(data: Uint8Array, level: number): Promise<Uint8Array> {
   const zstdWasm = await zstdLib();
-  // O retorno é uma janela sobre a memória do WASM; a cópia é o que torna o
-  // resultado seguro de guardar.
-  return Uint8Array.from(zstdWasm.compress(data, clampLevel("zstd", level)));
+  const clamped = clampLevel("zstd", level);
+  try {
+    // O retorno é uma janela sobre a memória do WASM; a cópia é o que torna o
+    // resultado seguro de guardar.
+    return Uint8Array.from(zstdWasm.compress(data, clamped));
+  } catch (failure) {
+    if (zstdErrorCode(failure) === ZSTD_MEMORY_ALLOCATION) {
+      throw new OperationError({ code: "error.compressMemory", params: { level: clamped } });
+    }
+    throw failure;
+  }
 }
 
 export async function compress({
@@ -133,17 +141,23 @@ async function gunzip(data: Uint8Array): Promise<Uint8Array> {
 }
 
 /**
- * Código que o ZSTD devolve quando a saída não cabe no destino
- * (`ZSTD_error_dstSize_tooSmall`). A biblioteca só repassa o número na
- * mensagem, e é ele que separa "passou do teto" de "arquivo corrompido".
+ * A biblioteca só repassa o código de erro do ZSTD como número na mensagem
+ * (`ZSTD_error_*` em error_public.h), e é ele que separa "passou do teto" e
+ * "faltou memória" de "arquivo corrompido". O valor chega negativo ou como
+ * complemento em 32 bits, conforme a interpretação do `size_t`.
  */
 const ZSTD_DESTINATION_TOO_SMALL = 70;
+const ZSTD_MEMORY_ALLOCATION = 64;
+
+function zstdErrorCode(failure: unknown): number | undefined {
+  const match = failure instanceof Error ? /code (-?\d+)$/.exec(failure.message) : null;
+  if (!match) return undefined;
+  const code = Number(match[1]);
+  return code < 0 ? -code : 2 ** 32 - code;
+}
 
 function isDestinationTooSmall(failure: unknown): boolean {
-  const match = failure instanceof Error ? /code (-?\d+)$/.exec(failure.message) : null;
-  if (!match) return false;
-  const code = Number(match[1]);
-  return code === -ZSTD_DESTINATION_TOO_SMALL || code === 2 ** 32 - ZSTD_DESTINATION_TOO_SMALL;
+  return zstdErrorCode(failure) === ZSTD_DESTINATION_TOO_SMALL;
 }
 
 /**

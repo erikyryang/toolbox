@@ -26,10 +26,17 @@ export const CLIENT_MAX_BYTES = envNumber(
   10 * 1024 * 1024 * 1024,
 );
 
-/** Nível ZSTD acima do qual o custo de memória sai do orçamento do navegador. */
+/**
+ * Nível ZSTD acima do qual a compactação vai para o backend.
+ *
+ * O compressor dimensiona as tabelas pelo tamanho da entrada, então nível
+ * alto em arquivo pequeno custa pouco; é a combinação de nível alto com
+ * arquivo grande que estoura o heap do WASM, e nesse caso a falha é
+ * reportada como falta de memória, não escondida por um teto de nível.
+ */
 export const ZSTD_CLIENT_MAX_LEVEL = envNumber(
   process.env.NEXT_PUBLIC_ZSTD_CLIENT_MAX_LEVEL,
-  12,
+  22,
 );
 
 /**
