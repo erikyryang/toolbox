@@ -28,6 +28,7 @@ export const en = {
   "error.retryDate": "{message} Try again after {retryAfter}.",
   "error.noFiles": "Select a file to compress.",
   "error.serverFormat": "{format} requires server processing for this operation.",
+  "error.browserMemory": "The file does not fit in the browser's memory. Processing here holds the whole file at once, so the practical ceiling is a few GB, depending on the machine.",
   "error.compressMemory": "The browser ran out of memory compressing at level {level}. Use a lower level or a smaller file.",
   "error.archive": "The archive could not be read. Check that it is complete and uses a supported format.",
   "error.entry": "The requested entry does not exist in the archive.",
@@ -107,6 +108,7 @@ export const pt: Record<MessageKey, string> = {
   "error.retryDate": "{message} Tente novamente após {retryAfter}.",
   "error.noFiles": "Selecione um arquivo para compactar.",
   "error.serverFormat": "{format} exige processamento no servidor para esta operação.",
+  "error.browserMemory": "O arquivo não cabe na memória do navegador. O processamento aqui segura o arquivo inteiro de uma vez, então o teto prático é de poucos GB, conforme a máquina.",
   "error.compressMemory": "O navegador ficou sem memória ao compactar no nível {level}. Use um nível menor ou um arquivo menor.",
   "error.archive": "Não foi possível ler o arquivo. Confira se está completo e usa um formato suportado.",
   "error.entry": "A entrada pedida não existe no arquivo.",
@@ -179,6 +181,10 @@ export function feedbackOf(error: unknown): Feedback {
       return value as Feedback;
     }
   }
+  // O motor JS recusa buffers grandes demais com RangeError — "Array buffer
+  // allocation failed", "Invalid typed array length". Nas operações de
+  // arquivo é o que acontece quando o arquivo não cabe na memória da aba.
+  if (error instanceof RangeError) return { code: "error.browserMemory" };
   return { code: "error.unknown" };
 }
 

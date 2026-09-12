@@ -93,6 +93,7 @@ describe("leitura do feedback de um erro", () => {
 
   it("trata um erro comum como desconhecido, sem expor sua frase", () => {
     expect(feedbackOf(new Error("ENOENT: no such file"))).toEqual({ code: "error.unknown" });
+    expect(feedbackOf(new RangeError("Array buffer allocation failed"))).toEqual({ code: "error.browserMemory" });
     expect(feedbackOf("falhou")).toEqual({ code: "error.unknown" });
   });
 
