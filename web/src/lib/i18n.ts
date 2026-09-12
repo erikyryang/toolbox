@@ -93,20 +93,17 @@ const optionTranslations: Record<string, string> = {
   "Indentação": "Indentation", "2 espaços": "2 spaces", "4 espaços": "4 spaces", "Tabulação": "Tabs",
   "Ordenar chaves": "Sort keys", "Alfabeto": "Alphabet",
   "Padrão (RFC 4648 §4)": "Standard (RFC 4648 §4)", "Preenchimento com =": "Padding with =",
-  "Nível de compressão": "Compression level",
   "Separador": "Separator", "Nada": "None", "Espaço": "Space", "Vírgula": "Comma",
   "Vírgula + espaço": "Comma + space", "Ponto e vírgula": "Semicolon", "Barra vertical": "Pipe",
   "Aparar espaços": "Trim whitespace", "Descartar linhas vazias": "Drop empty lines",
   "De": "From", "Para": "To", "Base": "Base",
   "1024 (binária, IEC)": "1024 (binary, IEC)", "1000 (decimal, SI)": "1000 (decimal, SI)",
-  "Nível exato": "Exact level", "Rápido": "Fast", "Equilibrado": "Balanced", "Máximo": "Maximum", "Customizado": "Custom",
 };
 
 const helpTranslations: Record<string, string> = {
   "Desligado, a ordem original das chaves é preservada.": "When off, the original key order is preserved.",
   "O alfabeto URL-safe troca + e / por - e _.": "The URL-safe alphabet replaces + and / with - and _.",
   "Desligado, a saída não recebe os caracteres = do fim.": "When off, output does not include trailing = characters.",
-  "Vale apenas com o preset Customizado.": "Only applies with the Custom preset.",
   "Entra entre as linhas, nunca antes da primeira nem depois da última.":
     "Goes between lines, never before the first or after the last.",
   "Ligado, os espaços das pontas de cada linha ficam de fora.":

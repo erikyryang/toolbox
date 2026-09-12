@@ -1,9 +1,11 @@
 import {
   COMPRESSIBLE_FORMATS,
   FORMATS,
-  PRESET_LABELS,
+  PRESETS,
   type FormatId,
 } from "../compression/formats.ts";
+import type { Language } from "../i18n.ts";
+import { message } from "../messages.ts";
 import type { OperationMeta, OptionSpec } from "./types.ts";
 
 /**
@@ -24,8 +26,12 @@ import type { OperationMeta, OptionSpec } from "./types.ts";
  * Opções de nível do formato escolhido. É função do formato, e não da rota,
  * porque o formato virou um controle da tela: trocar de ZSTD para GZIP muda o
  * range de 1–22 para 1–9, e a lista precisa acompanhar.
+ *
+ * Os rótulos saem do catálogo de mensagens, no idioma pedido: a tela monta
+ * estas opções por conta própria a cada troca de formato, fora do caminho
+ * que traduz o resto da operação.
  */
-export function levelOptionsFor(format: FormatId): OptionSpec[] {
+export function levelOptionsFor(format: FormatId, language: Language = "pt"): OptionSpec[] {
   const spec = FORMATS[format];
   if (!spec.levels) return [];
 
@@ -33,21 +39,15 @@ export function levelOptionsFor(format: FormatId): OptionSpec[] {
     {
       kind: "select",
       id: "preset",
-      label: "Nível de compressão",
-      help: `Cada preset vira um nível dentro do range ${spec.levels.min}–${spec.levels.max} deste formato.`,
+      label: message(language, "ui.compressionLevel"),
+      help: message(language, "ui.compressionLevelHelp", { min: spec.levels.min, max: spec.levels.max }),
       default: "balanced",
-      choices: [
-        { value: "fast", label: PRESET_LABELS.fast },
-        { value: "balanced", label: PRESET_LABELS.balanced },
-        { value: "max", label: PRESET_LABELS.max },
-        { value: "custom", label: PRESET_LABELS.custom },
-      ],
+      choices: PRESETS.map((preset) => ({ value: preset, label: message(language, `ui.preset.${preset}`) })),
     },
     {
       kind: "select",
       id: "level",
-      label: "Nível exato",
-      help: "Vale apenas com o preset Customizado.",
+      label: message(language, "ui.exactLevel"),
       default: String(Math.round((spec.levels.min + spec.levels.max) / 2)),
       choices: Array.from(
         { length: spec.levels.max - spec.levels.min + 1 },

@@ -89,8 +89,12 @@ export function FileWorkspace({
   const level = compressing ? levelForPreset(format, preset, customLevel) : 0;
   const totalSize = files.reduce((sum, file) => sum + file.size, 0);
   // As opções seguem o formato ativo, não a rota: o range de nível do ZSTD
-  // (1–22) não é o do GZIP (1–9).
-  const levelOptions = compressing ? levelOptionsFor(format) : operation.options;
+  // (1–22) não é o do GZIP (1–9). O nível exato só aparece quando o preset
+  // é o customizado — nos outros ele não tem efeito, e um controle sem efeito
+  // só confunde.
+  const levelOptions = compressing
+    ? levelOptionsFor(format, language).filter((option) => option.id !== "level" || preset === "custom")
+    : operation.options;
 
   const routing: RoutingDecision = decideRouting({
     format: activeFormat,

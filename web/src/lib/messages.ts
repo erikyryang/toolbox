@@ -75,6 +75,9 @@ export const en = {
   "ui.preset.balanced": "Balanced",
   "ui.preset.max": "Maximum",
   "ui.preset.custom": "Custom",
+  "ui.compressionLevel": "Compression level",
+  "ui.compressionLevelHelp": "Each preset maps to a level within this format's {min}–{max} range.",
+  "ui.exactLevel": "Exact level",
 };
 
 export type MessageKey = keyof typeof en;
@@ -151,6 +154,9 @@ export const pt: Record<MessageKey, string> = {
   "ui.preset.balanced": "Equilibrado",
   "ui.preset.max": "Máximo",
   "ui.preset.custom": "Customizado",
+  "ui.compressionLevel": "Nível de compressão",
+  "ui.compressionLevelHelp": "Cada preset vira um nível dentro do range {min}–{max} deste formato.",
+  "ui.exactLevel": "Nível exato",
 };
 
 export type MessageParams = Readonly<Record<string, string | number>>;

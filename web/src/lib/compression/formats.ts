@@ -129,12 +129,8 @@ export const DECOMPRESSIBLE_FORMATS: FormatId[] = [
 
 export type Preset = "fast" | "balanced" | "max" | "custom";
 
-export const PRESET_LABELS: Record<Preset, string> = {
-  fast: "Rápido",
-  balanced: "Balanceado",
-  max: "Máxima",
-  custom: "Customizado",
-};
+/** Na ordem em que aparecem na tela; os rótulos vivem no catálogo de mensagens. */
+export const PRESETS: Preset[] = ["fast", "balanced", "max", "custom"];
 
 /**
  * Cada preset vira um nível dentro do range do formato escolhido. O mapa é
