@@ -64,11 +64,11 @@ export const FORMATS: Record<FormatId, FormatSpec> = {
     container: false,
     levels: { min: 1, max: 22 },
     clientCompress: true,
-    // A biblioteca WASM disponível expõe apenas uma API síncrona, que aloca a
-    // saída inteira antes de podermos aplicar o limite anti-bomba.
-    clientDecompress: false,
+    // A biblioteca WASM só tem API síncrona, sem streaming: o guarda
+    // anti-bomba age antes, pelo tamanho declarado no cabeçalho do frame, e
+    // por um teto de alocação quando o cabeçalho não declara nada.
+    clientDecompress: true,
     magic: [{ offset: 0, bytes: [0x28, 0xb5, 0x2f, 0xfd] }],
-    backendReason: "a leitura segura de ZSTD exige o servidor",
   },
   tar: {
     id: "tar",

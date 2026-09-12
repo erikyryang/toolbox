@@ -14,10 +14,16 @@ function envNumber(value: string | undefined, fallback: number): number {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
-/** Acima deste tamanho, a operação vai para o backend. */
+/**
+ * Acima deste tamanho, a operação vai para o backend.
+ *
+ * O arquivo inteiro é lido para a memória antes de processar, e a saída
+ * também fica em memória: o custo real é o dobro disso, e quem instala sem
+ * backend paga esse custo no navegador de quem usa.
+ */
 export const CLIENT_MAX_BYTES = envNumber(
   process.env.NEXT_PUBLIC_CLIENT_MAX_BYTES,
-  100 * 1024 * 1024,
+  1024 * 1024 * 1024,
 );
 
 /** Nível ZSTD acima do qual o custo de memória sai do orçamento do navegador. */
@@ -30,6 +36,18 @@ export const ZSTD_CLIENT_MAX_LEVEL = envNumber(
 export const MAX_OUTPUT_BYTES = envNumber(
   process.env.NEXT_PUBLIC_MAX_OUTPUT_BYTES,
   2 * 1024 * 1024 * 1024,
+);
+
+/**
+ * Teto de saída de uma descompressão ZSTD no navegador.
+ *
+ * Menor que MAX_OUTPUT_BYTES porque a biblioteca WASM não faz streaming: a
+ * saída inteira vive na memória do módulo, e depois é copiada para fora. O
+ * pico é o dobro do conteúdo, e o heap do WASM tem 2 GB no máximo.
+ */
+export const ZSTD_CLIENT_MAX_OUTPUT_BYTES = envNumber(
+  process.env.NEXT_PUBLIC_ZSTD_CLIENT_MAX_OUTPUT_BYTES,
+  512 * 1024 * 1024,
 );
 
 /** Razão máxima entre tamanho extraído e tamanho comprimido. */

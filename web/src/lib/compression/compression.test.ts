@@ -134,6 +134,25 @@ describe("detecção de formato", () => {
     expect(decoder.decode(extracted)).toBe(CONTENT_B);
   });
 
+  it("lista as entradas de um TAR dentro de um ZSTD", async () => {
+    const packed = await compress({
+      format: "zstd",
+      level: 3,
+      files: [{ name: "bundle.tar", data: createTar(files()) }],
+    });
+
+    const archive = await inspect(packed, "bundle.tar.zst");
+    expect(archive.format).toBe("zstd");
+    expect(archive.single).toBe(false);
+    expect(archive.entries.map((entry) => entry.name)).toEqual([
+      "a.txt",
+      "pasta/b.txt",
+    ]);
+
+    const extracted = await extract(packed, archive, "pasta/b.txt");
+    expect(decoder.decode(extracted)).toBe(CONTENT_B);
+  });
+
   it("erra com clareza em formato desconhecido", async () => {
     const bytes = Uint8Array.from([1, 2, 3, 4, 5, 6, 7, 8]);
     expect((await feedbackFromRejection(inspect(bytes))).code).toBe("error.signature");
@@ -196,9 +215,9 @@ describe("roteamento entre navegador e servidor", () => {
     }
   });
 
-  it("lê GZIP no navegador e roteia ZSTD ao servidor", () => {
+  it("lê GZIP e ZSTD no navegador", () => {
     expect(decideRouting({ format: "gzip", direction: "decompress", sizeBytes: 1024 }).where).toBe("client");
-    expect(decideRouting({ format: "zstd", direction: "decompress", sizeBytes: 1024 }).where).toBe("server");
+    expect(decideRouting({ format: "zstd", direction: "decompress", sizeBytes: 1024 }).where).toBe("client");
   });
 
   it("vai ao servidor acima do teto de nível do ZSTD", () => {

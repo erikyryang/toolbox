@@ -2,8 +2,15 @@ import { OperationError } from "../engines/errors.ts";
 import { assertDeclaredSizeIsSane, createBombGuard } from "./bomb.ts";
 import { detectFormat, describeSignature } from "./detect.ts";
 import { FORMATS, clampLevel, type FormatId } from "./formats.ts";
+import {
+  MAX_EXPANSION_RATIO,
+  RATIO_CHECK_FLOOR_BYTES,
+  ZSTD_CLIENT_MAX_OUTPUT_BYTES,
+  formatBytes,
+} from "./limits.ts";
 import { createTar, extractTarEntry, listTar, type TarEntry } from "./tar.ts";
 import { listZip } from "./zip-listing.ts";
+import { zstdFrameContentSize } from "./zstd-frame.ts";
 
 /**
  * Codecs de compactação do navegador.
@@ -125,6 +132,61 @@ async function gunzip(data: Uint8Array): Promise<Uint8Array> {
   return concat(chunks, guard.total());
 }
 
+/**
+ * Código que o ZSTD devolve quando a saída não cabe no destino
+ * (`ZSTD_error_dstSize_tooSmall`). A biblioteca só repassa o número na
+ * mensagem, e é ele que separa "passou do teto" de "arquivo corrompido".
+ */
+const ZSTD_DESTINATION_TOO_SMALL = 70;
+
+function isDestinationTooSmall(failure: unknown): boolean {
+  const match = failure instanceof Error ? /code (-?\d+)$/.exec(failure.message) : null;
+  if (!match) return false;
+  const code = Number(match[1]);
+  return code === -ZSTD_DESTINATION_TOO_SMALL || code === 2 ** 32 - ZSTD_DESTINATION_TOO_SMALL;
+}
+
+/**
+ * A API é síncrona e sem streaming, então o guarda anti-bomba não pode agir
+ * conforme a saída cresce. Age antes: pelo tamanho que o cabeçalho declara,
+ * quando declara, e pelo teto de alocação que a biblioteca respeita quando
+ * não declara — o decodificador falha em vez de crescer além dele.
+ */
+async function unzstd(data: Uint8Array): Promise<Uint8Array> {
+  const declared = zstdFrameContentSize(data);
+  const zstdWasm = await zstdLib();
+
+  if (declared !== undefined) {
+    assertDeclaredSizeIsSane(data.length, declared);
+    if (declared > ZSTD_CLIENT_MAX_OUTPUT_BYTES) {
+      throw new OperationError({ code: "error.declaredLimit", params: { size: formatBytes(declared), limit: formatBytes(ZSTD_CLIENT_MAX_OUTPUT_BYTES) } });
+    }
+    try {
+      return zstdWasm.decompress(data);
+    } catch {
+      throw new OperationError({ code: "error.archive" });
+    }
+  }
+
+  // Sem tamanho declarado, o teto é o mesmo que o guarda incremental
+  // aplicaria: a razão de expansão acima do piso, limitada ao orçamento do
+  // navegador.
+  const capacity = Math.min(
+    ZSTD_CLIENT_MAX_OUTPUT_BYTES,
+    Math.max(RATIO_CHECK_FLOOR_BYTES, data.length * MAX_EXPANSION_RATIO),
+  );
+  try {
+    return zstdWasm.decompress(data, { defaultHeapSize: capacity });
+  } catch (failure) {
+    if (!isDestinationTooSmall(failure)) {
+      throw new OperationError({ code: "error.archive" });
+    }
+    throw capacity === ZSTD_CLIENT_MAX_OUTPUT_BYTES
+      ? new OperationError({ code: "error.outputLimit", params: { limit: formatBytes(ZSTD_CLIENT_MAX_OUTPUT_BYTES) } })
+      : new OperationError({ code: "error.expansionLimit", params: { ratio: MAX_EXPANSION_RATIO } });
+  }
+}
+
 function concat(chunks: Uint8Array[], total: number): Uint8Array {
   const out = new Uint8Array(total);
   let offset = 0;
@@ -198,6 +260,8 @@ async function decompressEnvelope(
   switch (format) {
     case "gzip":
       return gunzip(data);
+    case "zstd":
+      return unzstd(data);
     default:
       return data;
   }
