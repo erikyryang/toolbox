@@ -32,10 +32,16 @@ export const ZSTD_CLIENT_MAX_LEVEL = envNumber(
   12,
 );
 
-/** Teto de bytes de saída de uma extração. */
+/**
+ * Teto de bytes de saída de uma extração.
+ *
+ * Fica acima do que o navegador aloca num único buffer: o teto de verdade
+ * é o do motor JS, e este valor só existe para o guarda de razão ter um
+ * absoluto contra bomba de descompressão.
+ */
 export const MAX_OUTPUT_BYTES = envNumber(
   process.env.NEXT_PUBLIC_MAX_OUTPUT_BYTES,
-  2 * 1024 * 1024 * 1024,
+  10 * 1024 * 1024 * 1024,
 );
 
 /**
