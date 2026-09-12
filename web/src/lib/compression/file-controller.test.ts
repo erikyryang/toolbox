@@ -57,6 +57,25 @@ describe("file operation lifecycle", () => {
     expect(controller.getSnapshot().result?.name).toBe("a.zip.zip");
   });
 
+  it("refuses an entry the local format cannot hold before reading it", async () => {
+    const { controller, local } = fixture();
+    const file = selected(0xffffffff + 1, "disco.iso");
+    await controller.select([file], false);
+    await controller.compress("zip", "balanced", 6);
+    expect(controller.getSnapshot().feedback).toMatchObject({ code: "error.entryTooLarge", params: { format: "ZIP", name: "disco.iso" } });
+    expect(file.blob.arrayBuffer).not.toHaveBeenCalled();
+    expect(local.compress).not.toHaveBeenCalled();
+  });
+
+  it("names the size when the browser cannot reserve memory", async () => {
+    const { controller } = fixture();
+    const file = selected(3 * 1024 * 1024 * 1024, "grande.bin");
+    vi.mocked(file.blob.arrayBuffer).mockRejectedValue(new RangeError("Array buffer allocation failed"));
+    await controller.select([file], false);
+    await controller.compress("gzip", "balanced", 6);
+    expect(controller.getSnapshot().feedback).toEqual({ code: "error.browserMemory", params: { size: "3.0 GB" } });
+  });
+
   it("routes by level before materializing compression input", async () => {
     const { controller, dependencies } = fixture();
     const file = selected();

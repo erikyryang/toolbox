@@ -29,6 +29,13 @@ export type FormatSpec = {
   clientDecompress: boolean;
   /** Assinaturas para detecção; deslocamento e bytes esperados. */
   magic: { offset: number; bytes: number[] }[];
+  /**
+   * Maior entrada que o formato registra sem extensões — ausente quando o
+   * formato não impõe teto. É conferido antes de ler qualquer byte: um
+   * arquivo acima disso não tem como sair certo, e descobrir isso depois de
+   * carregar gigabytes seria desperdício.
+   */
+  maxEntryBytes?: number;
   /** Motivo pelo qual o navegador não dá conta, exibido na interface. */
   backendReason?: string;
 };
@@ -44,6 +51,8 @@ export const FORMATS: Record<FormatId, FormatSpec> = {
     clientCompress: true,
     clientDecompress: true,
     magic: [{ offset: 0, bytes: [0x50, 0x4b, 0x03, 0x04] }, { offset: 0, bytes: [0x50, 0x4b, 0x05, 0x06] }],
+    // Campos de 32 bits no cabeçalho; acima disso é ZIP64, que o fflate não gera.
+    maxEntryBytes: 0xffffffff,
   },
   gzip: {
     id: "gzip",
@@ -79,6 +88,8 @@ export const FORMATS: Record<FormatId, FormatSpec> = {
     clientCompress: true,
     clientDecompress: true,
     magic: [{ offset: 257, bytes: [0x75, 0x73, 0x74, 0x61, 0x72] }],
+    // Tamanho em 11 dígitos octais no cabeçalho ustar.
+    maxEntryBytes: 0o77777777777,
   },
   rar: {
     id: "rar",

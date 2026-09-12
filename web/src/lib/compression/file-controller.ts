@@ -2,7 +2,7 @@ import type { Archive } from "./codecs";
 import type { FormatId } from "./formats";
 import { FORMATS } from "./formats";
 import { detectFormat } from "./detect";
-import { decideRouting } from "./limits";
+import { decideRouting, formatBytes } from "./limits";
 import { OperationError } from "../engines/errors";
 import { feedbackOf, type Feedback } from "../messages";
 
@@ -89,6 +89,14 @@ export class FileOperationController {
     this.#publish({ files, result: undefined, feedback: undefined, busy: false });
   }
 
+  /** Quando a falha é memória, a mensagem diz de quanto se tratava. */
+  #feedbackOf(failure: unknown): Feedback {
+    const feedback = feedbackOf(failure);
+    if (feedback.code !== "error.browserMemory") return feedback;
+    const size = this.#state.files.reduce((sum, file) => sum + file.size, 0);
+    return { ...feedback, params: { size: formatBytes(size) } };
+  }
+
   async select(files: SelectedFile[], inspect: boolean, knownFormat?: FormatId) {
     const task = this.#begin();
     this.#publish({ files, archive: undefined, detectedFormat: undefined, result: undefined, feedback: undefined, busy: inspect && files.length > 0 });
@@ -110,7 +118,7 @@ export class FileOperationController {
       }
       if (task.current()) this.#publish({ archive });
     } catch (failure) {
-      if (task.current()) this.#publish({ feedback: feedbackOf(failure) });
+      if (task.current()) this.#publish({ feedback: this.#feedbackOf(failure) });
     } finally {
       if (task.current()) this.#publish({ busy: false });
     }
@@ -128,13 +136,19 @@ export class FileOperationController {
         if (!this.dependencies.backendAvailable()) throw new OperationError({ code: "error.backendUnavailable" });
         bytes = await this.dependencies.compressOnServer(format, preset, level, files.map((file) => ({ name: file.name, data: file.blob })), task.signal);
       } else {
+        // Só o codec do navegador tem esse teto: o backend pode gravar ZIP64.
+        const { label, maxEntryBytes } = FORMATS[format];
+        const oversized = maxEntryBytes === undefined ? undefined : files.find((file) => file.size > maxEntryBytes);
+        if (oversized) {
+          throw new OperationError({ code: "error.entryTooLarge", params: { format: label, name: oversized.name, size: formatBytes(oversized.size), limit: formatBytes(maxEntryBytes!) } });
+        }
         const payload = await Promise.all(files.map(async (file) => ({ name: file.name, data: await file.blob.arrayBuffer() })));
         if (!task.current()) return;
         bytes = await this.#local().compress(format, level, payload);
       }
       if (task.current()) this.#publish({ result: { name: `${files.length === 1 ? files[0].name : "arquivos"}${FORMATS[format].extension}`, bytes } });
     } catch (failure) {
-      if (task.current()) this.#publish({ feedback: feedbackOf(failure) });
+      if (task.current()) this.#publish({ feedback: this.#feedbackOf(failure) });
     } finally {
       if (task.current()) this.#publish({ busy: false });
     }
@@ -158,7 +172,7 @@ export class FileOperationController {
       }
       if (task.current()) this.#publish({ result: { name: entryName?.split("/").pop() ?? archive.entries[0]?.name ?? files[0].name, bytes } });
     } catch (failure) {
-      if (task.current()) this.#publish({ feedback: feedbackOf(failure) });
+      if (task.current()) this.#publish({ feedback: this.#feedbackOf(failure) });
     } finally {
       if (task.current()) this.#publish({ busy: false });
     }
